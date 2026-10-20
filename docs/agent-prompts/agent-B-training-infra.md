@@ -36,3 +36,6 @@ Single-role training env (Gymnasium): `action_space = Discrete(N)` where N = 1 +
 ## Rules
 - Match surrounding style; no speculative abstractions; do not build a custom RL algorithm as a goal.
 - Final report: branch, commit list, files changed, commands run with results, what is tested vs deferred, open requests to the lead.
+
+## HARD RULE: commit at least every 4 minutes
+Commit work in progress on your branch at least once every 4 minutes of active work (and before any command expected to run longer than 4 minutes). Never leave long stretches uncommitted. Never read, print, or commit `.env` or API keys.

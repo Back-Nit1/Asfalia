@@ -35,3 +35,6 @@ Do NOT edit `pyproject.toml`, `events.py`, `cli.py`, or anything else. If you ne
 - Match surrounding style; no speculative abstractions; no extra dependencies you can avoid.
 - Keep provider keys out of source, prompts, and browser responses.
 - Final report: branch name, commit list, files changed, commands run with results, what is fixture vs real, open requests to the lead.
+
+## HARD RULE: commit at least every 4 minutes
+Commit work in progress on your branch at least once every 4 minutes of active work (and before any command expected to run longer than 4 minutes). Never leave long stretches uncommitted. Never read, print, or commit `.env` or API keys.

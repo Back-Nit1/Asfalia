@@ -1,5 +1,7 @@
 # Contracts (owned by the lead)
 
+> **HARD RULE: commit at least every 4 minutes** (see CLAUDE.md).
+
 Merge or rebase `main` to get the real implementations; everything below exists on `main`.
 
 ## Environment (`hospital_rl.envs`)
