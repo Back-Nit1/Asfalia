@@ -1,0 +1,5 @@
+role: shared
+horizon: 60
+size: 40
+difficulty: 0.7
+base_logging: 0

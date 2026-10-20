@@ -7,22 +7,34 @@ from .engine.transitions import World
 from .schemas import ScenarioSpec, catalog_hash
 
 
-def run_episode(spec: ScenarioSpec, seed: int, attacker, defender) -> dict:
+def run_episode(spec: ScenarioSpec, seed: int, attacker, defender, record: bool = False) -> dict:
+    """record=True also returns role-visible decision rows (rows) and the evaluator truth log (privileged)."""
     w = World(spec, seed)
+    rows = []
     total = {"attacker": 0.0, "defender": 0.0}
     steps = []
     while True:
-        a = attacker.act(w.view("attacker"), w.legal_attacker())   # both choose from pre-step views
-        d = defender.act(w.view("defender"), w.legal_defender())
+        va, vd = w.view("attacker"), w.view("defender")             # both choose from pre-step views
+        la, ld = w.legal_attacker(), w.legal_defender()
+        a, d = attacker.act(va, la), defender.act(vd, ld)
         info = w.step(a, d)
+        if record:
+            for role, v, leg, act in (("attacker", va, la, a), ("defender", vd, ld, d)):
+                rows.append({"role": role, "step": w.st.tick - 1, "observation": v,
+                             "legal": [[x.type, x.node] for x in leg], "action": asdict(act),
+                             "reward_components": info["components"][role], "reward": info["reward"][role],
+                             "terminated": False, "truncated": info["done"]})
         for k in total:
             total[k] += info["reward"][k]
         steps.append({"tick": w.st.tick - 1, "attacker": asdict(a), "defender": asdict(d),
                       "events": info["events"], "reward": info["reward"], "components": info["components"]})
         if info["done"]:
             break
-    return {"scenario": spec.name, "scenario_hash": spec.hash(), "catalog_hash": catalog_hash(), "seed": seed,
+    out = {"scenario": spec.name, "spec": spec.model_dump(mode="json"), "scenario_hash": spec.hash(), "catalog_hash": catalog_hash(), "seed": seed,
             "tie_policy": spec.tie_policy, "return": total, "metrics": summarize(w), "steps": steps}
+    if record:
+        out["rows"], out["privileged"] = rows, w.truth
+    return out
 
 
 def summarize(w: World) -> dict:

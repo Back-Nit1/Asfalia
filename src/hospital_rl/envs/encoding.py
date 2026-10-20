@@ -91,7 +91,7 @@ def encode_obs(w: World, codec: Codec, role: str, hist: list[np.ndarray]) -> dic
             o = len(ASSETS)
             F[s, o:o + 9] = [nv["logging"] / 2, nv["mfa"], nv["isolated"], nv["quarantined"], nv["service_up"],
                              nv["patchable"], nid in busy, min(recent.get(nid, 0) / 3, 1.0),
-                             node.records * node.sensitivity / 10]
+                             min(node.records * node.sensitivity / 10, 1.0)]
         for src, outs in w.topo.out.items():
             for dst in outs["reach"]:
                 A[codec.node_slot[src], codec.node_slot[dst]] = 1

@@ -62,28 +62,55 @@ class ScriptedAttacker:
 
 
 class StaticHardening:
-    """Spend early on MFA/logging for critical nodes, then idle."""
+    """Preventive posture: MFA and logging on critical assets, then patch exposed/patchable nodes in priority order."""
+    PRIORITY = ("vpn", "workstation", "ehr", "pacs", "k8s_service", "billing", "idp")
 
     def act(self, view, legal):
+        by = {(a.type, a.node): a for a in legal}
+        crit = [n for n, v in view["nodes"].items() if v["asset_type"] in ("ehr", "pacs", "idp")]
+        done = getattr(self, "_patched", set())
+        self._patched = done
+        for kind in self.PRIORITY[:2]:                                  # close the entry points first
+            for n, v in sorted(view["nodes"].items()):
+                if v["asset_type"] == kind and n not in done and (D.PATCH.value, n) in by:
+                    done.add(n)
+                    return by[(D.PATCH.value, n)]
         for t in (D.INCREASE_LOGGING, D.ENABLE_MFA):
-            for a in legal:
-                if a.type == t and view["nodes"][a.node]["asset_type"] in ("ehr", "pacs", "idp"):
-                    return a
+            for n in crit:
+                if (t.value, n) in by and not (t == D.ENABLE_MFA and view["nodes"][n]["asset_type"] == "ehr"):
+                    return by[(t.value, n)]
+        for kind in self.PRIORITY:
+            for n, v in sorted(view["nodes"].items()):
+                if v["asset_type"] == kind and n not in done and (D.PATCH.value, n) in by:
+                    done.add(n)
+                    return by[(D.PATCH.value, n)]
         return WAIT
 
 
 class GreedyDefender:
-    """Budget-aware: respond to the latest alert on a node, else raise logging on sensitive assets."""
+    """Reactive, budget-aware: escalate on an alerted node (quarantine -> reimage -> restore). Alerts include
+    false positives, so over-reaction costs care availability."""
 
     def act(self, view, legal):
         by = {(a.type, a.node): a for a in legal}
-        for _, node, kind in reversed(view["alerts"]):
-            if kind == "benign_noise":
-                continue
-            for t in (D.REVOKE_SESSION, D.ROTATE_CREDENTIAL, D.ISOLATE):
-                if (t.value, node) in by and not view["nodes"][node]["isolated"]:
-                    return by[(t.value, node)]
-        for n, v in view["nodes"].items():
+        busy = {j[1] for j in view["jobs"]}
+        for n, v in sorted(view["nodes"].items()):                      # finish recovery first
+            if v["quarantined"] and (D.REIMAGE.value, n) in by and n in getattr(self, "q", set()):
+                self.q.discard(n)
+                self.r = getattr(self, "r", set()) | {n}
+                return by[(D.REIMAGE.value, n)]
+            if n in getattr(self, "r", set()) and n not in busy and (D.RESTORE_SERVICE.value, n) in by:
+                self.r.discard(n)
+                return by[(D.RESTORE_SERVICE.value, n)]
+        counts: dict[str, int] = {}
+        for t, node, _kind in view["alerts"]:
+            if t >= view["tick"] - 6:
+                counts[node] = counts.get(node, 0) + 1
+        for node, c in sorted(counts.items(), key=lambda x: -x[1]):         # act on repeated evidence only
+            if c >= 2 and (D.QUARANTINE.value, node) in by and not view["nodes"][node]["quarantined"]:
+                self.q = getattr(self, "q", set()) | {node}
+                return by[(D.QUARANTINE.value, node)]
+        for n, v in sorted(view["nodes"].items()):
             if v["asset_type"] in ("ehr", "pacs") and (D.INCREASE_LOGGING.value, n) in by:
                 return by[(D.INCREASE_LOGGING.value, n)]
         return WAIT

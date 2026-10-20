@@ -9,13 +9,30 @@ def main(argv: list[str] | None = None) -> int:
     demo.add_argument("--config", required=True)
     demo.add_argument("--seed", type=int, default=7)
     demo.add_argument("--out", default="runs/demo/episode.json")
-    for name in ("train", "evaluate", "adapt", "benchmark", "counterfactual",
-                 "replay", "orchestrate", "dashboard", "cloud-plan", "cleanup",
+    rp = sub.add_parser("replay")
+    rp.add_argument("--episode", required=True)
+    cf = sub.add_parser("counterfactual")
+    cf.add_argument("--episode", required=True)
+    cf.add_argument("--mode", choices=["fixed-intent", "adaptive"], default="fixed-intent")
+    cf.add_argument("--seeds", type=int, default=10)
+    bm = sub.add_parser("benchmark")
+    bm.add_argument("--config")
+    bm.add_argument("--split", choices=["train", "validation", "test"], default="validation")
+    bm.add_argument("--episodes", type=int, default=20)
+    bm.add_argument("--size", type=int, default=8)
+    bm.add_argument("--out")
+    for name in ("train", "evaluate", "adapt", "orchestrate", "dashboard", "cloud-plan", "cleanup",
                  "export-policy", "benchmark-inference"):
         sub.add_parser(name)
     args, _ = p.parse_known_args(argv)
     if args.cmd == "demo":
         return _demo(args)
+    if args.cmd == "replay":
+        return _replay(args)
+    if args.cmd == "counterfactual":
+        return _cf(args)
+    if args.cmd == "benchmark":
+        return _bench(args)
     print(f"hospital-rl {args.cmd}: not implemented yet", file=sys.stderr)
     return 2
 
@@ -33,6 +50,53 @@ def _demo(args) -> int:
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(ep))
     print(json.dumps(ep["metrics"], indent=1), f"\nwrote {out}")
+    return 0
+
+
+def _replay(args) -> int:
+    import json
+
+    ep = json.load(open(args.episode))
+    print(f"{ep['scenario']} seed={ep['seed']} tie={ep['tie_policy']} return={ep['return']}")
+    for st in ep["steps"]:
+        a, d = st["attacker"], st["defender"]
+        ev = [e for e in st["events"] if e["visible"] != "evaluator" and e["type"] != "attacker_outcome"]
+        print(f"t={st['tick']:>3} A:{a['type']}({a['node']}) D:{d['type']}({d['node']}) "
+              f"rD={st['reward']['defender']:+.3f} events={len(ev)}")
+    print(json.dumps(ep["metrics"]))
+    return 0
+
+
+def _cf(args) -> int:
+    import json
+
+    from .evaluation import counterfactual as cf
+    from .policies.scripted import GreedyDefender, Noop, ScriptedAttacker, StaticHardening
+    from .schemas import ScenarioSpec
+
+    ep = json.load(open(args.episode))
+    defs = {"noop": Noop, "static_hardening": StaticHardening, "greedy": GreedyDefender}
+    if args.mode == "fixed-intent":
+        out = cf.fixed_intent(ep, defs)
+    else:
+        out = cf.adaptive(ScenarioSpec.model_validate(ep["spec"]), list(range(args.seeds)), ScriptedAttacker, defs)
+    print(json.dumps(out, indent=1))
+    return 0
+
+
+def _bench(args) -> int:
+    import json
+
+    from .evaluation import benchmark
+
+    r = benchmark.run(args.split, args.episodes, args.size)
+    print(f"split={r['split']} hash={r['split_hash']} n={r['n_scenarios']}  (scripted attacker; uncalibrated)")
+    print(f"{'defender':20}{'exposure':>10}{'crit_ok':>9}{'spend':>8}  feasible")
+    for n, d in r["defenders"].items():
+        print(f"{n:20}{d['weighted_exposure_frac']['mean']:>10.3f}{d['critical_success']['mean']:>9.3f}"
+              f"{d['spend']['mean']:>8.1f}  {'yes' if d['feasible'] else 'NO (availability)'}")
+    if args.out:
+        open(args.out, "w").write(json.dumps(r))
     return 0
 
 

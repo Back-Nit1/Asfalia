@@ -1,0 +1,7 @@
+role: defender
+horizon: 40
+advance_on: {metric: validation_feasible_exposure, threshold: 0.5}
+levels:
+  - {size: 8,  difficulty: 0.3, base_logging: 0, opponents: [scripted_attacker, noop]}
+  - {size: 8,  difficulty: 0.6, base_logging: 0, opponents: [scripted_attacker, random]}
+  - {size: 12, difficulty: 0.8, base_logging: 0, opponents: [scripted_attacker, random, noop]}

@@ -1,0 +1,7 @@
+role: attacker
+horizon: 40
+advance_on: {metric: validation_success, threshold: 0.6}   # progress by validation, not training return
+levels:
+  - {size: 8,  difficulty: 0.0, base_logging: 0, opponents: [noop]}
+  - {size: 8,  difficulty: 0.5, base_logging: 1, opponents: [noop, static]}
+  - {size: 12, difficulty: 0.7, base_logging: 1, opponents: [static, greedy]}

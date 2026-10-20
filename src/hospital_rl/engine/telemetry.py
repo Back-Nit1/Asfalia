@@ -21,7 +21,9 @@ def emit_for_true_event(st: WorldState, spec: ScenarioSpec, seed: int, kind: str
 def benign_noise(st: WorldState, spec: ScenarioSpec, seed: int):
     for n, ns in st.nodes.items():
         if draw(seed, "fp", st.tick, n) < spec.false_positive_by_logging[ns.logging]:
-            st.pending_alerts.append(Alert(st.tick + 1, n, "benign_noise", False))
+            kinds = ("auth_anomaly", "flow_anomaly", "process_anomaly")   # indistinguishable from real alerts
+            k = kinds[int(draw(seed, "fpkind", st.tick, n) * 3)]
+            st.pending_alerts.append(Alert(st.tick + 1, n, k, False))
 
 
 def release(st: WorldState, drop_prob_stream_seed: int, drop: float = 0.1) -> list[Alert]:
