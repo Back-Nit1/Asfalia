@@ -36,9 +36,9 @@ def topology():
         s.append(f'<line x1="{x1}" y1="{y1}" x2="{x2}" y2="{y2}" stroke="#3a4757"/>')
     for n in spec.nodes:
         x, y = pos[n.id]
-        s.append(f'<circle cx="{x}" cy="{y}" r="20" fill="{COL[n.asset_type]}"/>'
-                 f'<text x="{x}" y="{y + 4}" text-anchor="middle" fill="#0f1419" font-weight="700">{n.id}</text>'
-                 f'<text x="{x}" y="{y + 36}" text-anchor="middle" fill="{MUT}" font-size="10">{n.asset_type}'
+        s.append(f'<circle cx="{x}" cy="{y}" r="26" fill="{COL[n.asset_type]}"/>'
+                 f'<text x="{x}" y="{y + 4}" text-anchor="middle" fill="#0f1419" font-size="11" font-weight="700">{n.id}</text>'
+                 f'<text x="{x}" y="{y + 42}" text-anchor="middle" fill="{MUT}" font-size="10">{n.asset_type}'
                  f'{" · "+str(n.records)+" rec" if n.records else ""}{" · no patch" if not n.patchable else ""}</text>')
     m = ep["metrics"]
     s.append(f'<text x="30" y="404" fill="{FG}">tiny fixture, seed 7, scripted attacker vs greedy defender: exfiltrated '
@@ -55,7 +55,7 @@ def tradeoff():
     y = lambda v: H - B - (v - 0.0) * (H - B - 50)                 # critical success 0..1
     s.append(f'<rect x="{L}" y="{y(1.0)}" width="{W - L - 30}" height="{y(0.95) - y(1.0)}" fill="#1c2b22"/>'
              f'<line x1="{L}" y1="{y(0.95)}" x2="{W - 30}" y2="{y(0.95)}" stroke="#6ec1a3" stroke-dasharray="4"/>'
-             f'<text x="{W - 150}" y="{y(0.95) - 6}" fill="#6ec1a3">feasible ≥ 0.95</text>')
+             f'<text x="{W - 150}" y="{y(0.95) + 16}" fill="#6ec1a3">feasible ≥ 0.95</text>')
     s.append(f'<line x1="{L}" y1="{H - B}" x2="{W - 30}" y2="{H - B}" stroke="{MUT}"/><line x1="{L}" y1="{H - B}" x2="{L}" y2="50" stroke="{MUT}"/>'
              f'<text x="{L + 200}" y="{H - 20}" fill="{MUT}">sensitivity-weighted exposure (lower is better)</text>'
              f'<text x="14" y="{H // 2}" fill="{MUT}" transform="rotate(-90 14 {H // 2})">critical workflow success</text>')

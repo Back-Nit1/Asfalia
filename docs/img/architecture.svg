@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 760" font-family="ui-monospace,Menlo,monospace" font-size="12">
+<defs><marker id="a" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8z" fill="#8b98a5"/></marker></defs>
+<rect width="100%" height="100%" fill="#0f1419"/>
+<text x="24" y="30" fill="#e6edf3" font-size="16" font-weight="700">Asfalia — system architecture (three control planes, one engine)</text>
+
+<!-- Dev plane -->
+<rect x="24" y="52" width="330" height="330" rx="8" fill="#141b22" stroke="#b8a1e3"/>
+<text x="38" y="74" fill="#b8a1e3" font-weight="700">1 · DEVELOPMENT PLANE (builds the repo)</text>
+<rect x="44" y="90" width="290" height="46" rx="5" fill="#1c2430" stroke="#2a3441"/><text x="54" y="110" fill="#e6edf3">Lead orchestrator</text><text x="54" y="126" fill="#8b98a5">schemas · task DAG · integration</text>
+<rect x="44" y="150" width="290" height="46" rx="5" fill="#1c2430" stroke="#2a3441"/><text x="54" y="170" fill="#e6edf3">Specialist coding agents (≤3)</text><text x="54" y="186" fill="#8b98a5">git worktree per task · leases</text>
+<rect x="44" y="210" width="290" height="46" rx="5" fill="#1c2430" stroke="#2a3441"/><text x="54" y="230" fill="#e6edf3">CodingAgentAdapter</text><text x="54" y="246" fill="#8b98a5">events · cancel · evidence</text>
+<rect x="44" y="270" width="290" height="46" rx="5" fill="#1c2430" stroke="#2a3441"/><text x="54" y="290" fill="#e6edf3">Acceptance checks</text><text x="54" y="306" fill="#8b98a5">pytest · typecheck · leakage tests</text>
+<text x="38" y="348" fill="#8b98a5">No access to RL policies or live runs.</text>
+
+<!-- Experiment plane -->
+<rect x="385" y="52" width="330" height="330" rx="8" fill="#141b22" stroke="#4fb3d9"/>
+<text x="399" y="74" fill="#4fb3d9" font-weight="700">2 · EXPERIMENT PLANE (schedules compute)</text>
+<rect x="405" y="90" width="290" height="46" rx="5" fill="#1c2430" stroke="#2a3441"/><text x="415" y="110" fill="#e6edf3">Experiment controller</text><text x="415" y="126" fill="#8b98a5">registered configs · splits frozen</text>
+<rect x="405" y="150" width="290" height="46" rx="5" fill="#1c2430" stroke="#2a3441"/><text x="415" y="170" fill="#e6edf3">Masked PPO trainer (both roles)</text><text x="415" y="186" fill="#8b98a5">checkpoints · resume · league</text>
+<rect x="405" y="210" width="290" height="46" rx="5" fill="#1c2430" stroke="#2a3441"/><text x="415" y="230" fill="#e6edf3">JobBackend: Local · Modal · Daytona</text><text x="415" y="246" fill="#8b98a5">caps · dry-run · cleanup</text>
+<rect x="405" y="270" width="290" height="46" rx="5" fill="#1c2430" stroke="#2a3441"/><text x="415" y="290" fill="#e6edf3">ArtifactStore + Benchmark</text><text x="415" y="306" fill="#8b98a5">hashes · splits · cross-play</text>
+<text x="399" y="348" fill="#8b98a5">Pinned code only; no coding-agent writes.</text>
+
+<!-- Learning / world plane -->
+<rect x="746" y="52" width="330" height="330" rx="8" fill="#141b22" stroke="#e5534b"/>
+<text x="760" y="74" fill="#e5534b" font-weight="700">3 · WORLD PLANE (learned policies act)</text>
+<rect x="766" y="90" width="290" height="46" rx="5" fill="#1c2430" stroke="#2a3441"/><text x="776" y="110" fill="#e6edf3">Attacker policy  ⇄  Defender policy</text><text x="776" y="126" fill="#8b98a5">typed catalog index only</text>
+<rect x="766" y="150" width="290" height="46" rx="5" fill="#1c2430" stroke="#2a3441"/><text x="776" y="170" fill="#e6edf3">PettingZoo ParallelEnv + masks</text><text x="776" y="186" fill="#8b98a5">role-local obs · slot permutation</text>
+<rect x="766" y="210" width="290" height="46" rx="5" fill="#1c2430" stroke="#2a3441"/><text x="776" y="230" fill="#e6edf3">Transition engine (one engine)</text><text x="776" y="246" fill="#8b98a5">RBAC · jobs · budget · workflows</text>
+<rect x="766" y="270" width="290" height="46" rx="5" fill="#1c2430" stroke="#2a3441"/><text x="776" y="290" fill="#e6edf3">Evaluator recorder (privileged)</text><text x="776" y="306" fill="#8b98a5">true state · labels · separate file</text>
+<text x="760" y="348" fill="#8b98a5">No tools, shell, SQL, network, or keys.</text>
+
+<!-- Event bus -->
+<rect x="24" y="410" width="1052" height="52" rx="8" fill="#1c2430" stroke="#6ec1a3"/>
+<text x="40" y="432" fill="#6ec1a3" font-weight="700">EventEnvelope bus (versioned; source_kind: development | experiment | world | infrastructure; visibility-scoped)</text>
+<text x="40" y="451" fill="#8b98a5">dedupe by event_id · ordered per (source, worker) · SQLite WAL (local) / PostgreSQL (cloud) · SSE with cursors</text>
+<line x1="189" y1="382" x2="189" y2="410" stroke="#8b98a5" marker-end="url(#a)"/><line x1="550" y1="382" x2="550" y2="410" stroke="#8b98a5" marker-end="url(#a)"/><line x1="911" y1="382" x2="911" y2="410" stroke="#8b98a5" marker-end="url(#a)"/>
+
+<!-- API + UI -->
+<rect x="24" y="490" width="520" height="110" rx="8" fill="#141b22" stroke="#e3c36e"/>
+<text x="38" y="512" fill="#e3c36e" font-weight="700">FastAPI (localhost by default, token auth otherwise)</text>
+<text x="38" y="534" fill="#e6edf3">/attacker-view  /defender-view  → role-visible DTOs only</text>
+<text x="38" y="552" fill="#e6edf3">/evaluator  → separate privileged token + DTO</text>
+<text x="38" y="570" fill="#e6edf3">tasks · runs · checkpoints · episodes · infrastructure</text>
+<text x="38" y="588" fill="#8b98a5">mutations idempotent · audited · async job launch</text>
+<rect x="576" y="490" width="500" height="110" rx="8" fill="#141b22" stroke="#e3c36e"/>
+<text x="590" y="512" fill="#e3c36e" font-weight="700">React + TypeScript + Vite dashboard</text>
+<text x="590" y="534" fill="#e6edf3">/overview /build /training /world/:id</text>
+<text x="590" y="552" fill="#e6edf3">/experiments /infrastructure /artifacts</text>
+<text x="590" y="570" fill="#8b98a5">LIVE / REPLAY / DEBUG · 2–5 Hz render · honest empty states</text>
+<line x1="550" y1="462" x2="284" y2="490" stroke="#8b98a5" marker-end="url(#a)"/><line x1="544" y1="545" x2="576" y2="545" stroke="#8b98a5" marker-end="url(#a)"/>
+
+<!-- Stores -->
+<rect x="24" y="628" width="1052" height="110" rx="8" fill="#141b22" stroke="#8b98a5"/>
+<text x="38" y="650" fill="#e6edf3" font-weight="700">Artifacts and data</text>
+<text x="38" y="672" fill="#e6edf3">checkpoints (weights · normalizer · RNG · catalog/obs hashes · lineage)   ·   trajectories JSONL (actor-visible)</text>
+<text x="38" y="692" fill="#e6edf3">privileged truth files (evaluator only)   ·   scenario/config/split hashes   ·   benchmark reports</text>
+<text x="38" y="716" fill="#8b98a5">Optional later: isolated synthetic clinical-database testbed (see README) · ONNX / C++ inference runner (measured, optional)</text>
+<line x1="550" y1="600" x2="550" y2="628" stroke="#8b98a5" marker-end="url(#a)"/>
+</svg>
