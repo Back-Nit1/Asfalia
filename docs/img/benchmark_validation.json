@@ -1,0 +1,263 @@
+{
+ "split": "validation",
+ "split_hash": "40a031b1a42fa0e9",
+ "n_scenarios": 20,
+ "defenders": {
+  "noop": {
+   "records_exfiltrated": {
+    "mean": 7.4,
+    "ci95": [
+     5.1816015259936545,
+     9.618398474006346
+    ],
+    "n": 20
+   },
+   "weighted_exposure_frac": {
+    "mean": 0.4770840230787357,
+    "ci95": [
+     0.335903171224135,
+     0.6182648749333364
+    ],
+    "n": 20
+   },
+   "critical_success": {
+    "mean": 1.0,
+    "ci95": [
+     1.0,
+     1.0
+    ],
+    "n": 20
+   },
+   "noncritical_success": {
+    "mean": 1.0,
+    "ci95": [
+     1.0,
+     1.0
+    ],
+    "n": 20
+   },
+   "spend": {
+    "mean": 0.0,
+    "ci95": [
+     0.0,
+     0.0
+    ],
+    "n": 20
+   },
+   "added_latency": {
+    "mean": 0.0,
+    "ci95": [
+     0.0,
+     0.0
+    ],
+    "n": 20
+   },
+   "availability_violation_rate": 0.0,
+   "feasible": true,
+   "benign_false_positive_alerts": {
+    "mean": 1.7,
+    "ci95": [
+     1.0950512853403018,
+     2.304948714659698
+    ],
+    "n": 20
+   },
+   "containment_time": {
+    "observed": [],
+    "censored": 20
+   }
+  },
+  "static_hardening": {
+   "records_exfiltrated": {
+    "mean": 0.0,
+    "ci95": [
+     0.0,
+     0.0
+    ],
+    "n": 20
+   },
+   "weighted_exposure_frac": {
+    "mean": 0.0,
+    "ci95": [
+     0.0,
+     0.0
+    ],
+    "n": 20
+   },
+   "critical_success": {
+    "mean": 0.9495686823657117,
+    "ci95": [
+     0.9476733699544827,
+     0.9514639947769407
+    ],
+    "n": 20
+   },
+   "noncritical_success": {
+    "mean": 1.0,
+    "ci95": [
+     1.0,
+     1.0
+    ],
+    "n": 20
+   },
+   "spend": {
+    "mean": 36.0,
+    "ci95": [
+     36.0,
+     36.0
+    ],
+    "n": 20
+   },
+   "added_latency": {
+    "mean": 0.0,
+    "ci95": [
+     0.0,
+     0.0
+    ],
+    "n": 20
+   },
+   "availability_violation_rate": 0.6,
+   "feasible": false,
+   "benign_false_positive_alerts": {
+    "mean": 1.95,
+    "ci95": [
+     1.3555875966442508,
+     2.544412403355749
+    ],
+    "n": 20
+   },
+   "containment_time": {
+    "observed": [],
+    "censored": 20
+   }
+  },
+  "greedy": {
+   "records_exfiltrated": {
+    "mean": 5.15,
+    "ci95": [
+     3.3219719569120976,
+     6.978028043087903
+    ],
+    "n": 20
+   },
+   "weighted_exposure_frac": {
+    "mean": 0.33467682455215997,
+    "ci95": [
+     0.2149844967352697,
+     0.45436915236905023
+    ],
+    "n": 20
+   },
+   "critical_success": {
+    "mean": 0.7826262434315449,
+    "ci95": [
+     0.702754419981585,
+     0.8624980668815047
+    ],
+    "n": 20
+   },
+   "noncritical_success": {
+    "mean": 0.9898148148148149,
+    "ci95": [
+     0.969851851851852,
+     1.0097777777777779
+    ],
+    "n": 20
+   },
+   "spend": {
+    "mean": 36.00000000000001,
+    "ci95": [
+     36.00000000000001,
+     36.00000000000001
+    ],
+    "n": 20
+   },
+   "added_latency": {
+    "mean": 0.0,
+    "ci95": [
+     0.0,
+     0.0
+    ],
+    "n": 20
+   },
+   "availability_violation_rate": 0.85,
+   "feasible": false,
+   "benign_false_positive_alerts": {
+    "mean": 3.9,
+    "ci95": [
+     2.9471984798279838,
+     4.852801520172016
+    ],
+    "n": 20
+   },
+   "containment_time": {
+    "observed": [],
+    "censored": 20
+   }
+  },
+  "isolate_everything": {
+   "records_exfiltrated": {
+    "mean": 0.0,
+    "ci95": [
+     0.0,
+     0.0
+    ],
+    "n": 20
+   },
+   "weighted_exposure_frac": {
+    "mean": 0.0,
+    "ci95": [
+     0.0,
+     0.0
+    ],
+    "n": 20
+   },
+   "critical_success": {
+    "mean": 0.10697947765011369,
+    "ci95": [
+     0.10518754841238322,
+     0.10877140688784416
+    ],
+    "n": 20
+   },
+   "noncritical_success": {
+    "mean": 0.07150170224255,
+    "ci95": [
+     0.06682872095742204,
+     0.07617468352767795
+    ],
+    "n": 20
+   },
+   "spend": {
+    "mean": 36.0,
+    "ci95": [
+     36.0,
+     36.0
+    ],
+    "n": 20
+   },
+   "added_latency": {
+    "mean": 0.0,
+    "ci95": [
+     0.0,
+     0.0
+    ],
+    "n": 20
+   },
+   "availability_violation_rate": 1.0,
+   "feasible": false,
+   "benign_false_positive_alerts": {
+    "mean": 1.7,
+    "ci95": [
+     1.0950512853403018,
+     2.304948714659698
+    ],
+    "n": 20
+   },
+   "containment_time": {
+    "observed": [],
+    "censored": 20
+   }
+  }
+ }
+}
