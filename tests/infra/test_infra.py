@@ -107,7 +107,7 @@ class FakeGateway:
         self.spawned += 1
         cid = f"fc-{self.spawned}"
         sp = JobSpec.model_validate_json(spec_json)
-        slot = self.calls[cid] = {"state": "running", "payload": {}}
+        slot = self.calls[cid] = {"state": "running", "payload": {}, "key": (sp.run_id, sp.attempt_id)}
 
         def work():
             try:
@@ -124,7 +124,12 @@ class FakeGateway:
         return s["state"], s["payload"]
 
     def cancel(self, call_id):
-        self.calls[call_id].update(state="failed", payload="cancelled")
+        # threads share the process-global torch RNG with the rest of the test run, so a "cancelled"
+        # job must really stop before the test returns
+        slot = self.calls[call_id]
+        self.write_control(*slot["key"], "stop")
+        slot["thread"].join(60)
+        slot.update(state="failed", payload="cancelled")
 
     def write_control(self, run_id, attempt_id, word):
         p = control_path(self.root, run_id, attempt_id)
