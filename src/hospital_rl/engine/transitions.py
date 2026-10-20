@@ -331,7 +331,9 @@ class World:
     def _update_containment(self):
         st = self.st
         live = any(attacker_has_access(st, n) for n in self.topo.node)
-        if st.m.first_access_tick is not None and not live and st.m.containment_tick is None:
+        if live:
+            st.m.containment_tick = None           # re-compromise re-opens the incident
+        elif st.m.first_access_tick is not None and st.m.containment_tick is None:
             st.m.containment_tick = st.tick
 
     # ------------------------------------------------------------------ role views (no hidden state)
