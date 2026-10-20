@@ -30,7 +30,7 @@ CREATE TABLE IF NOT EXISTS artifacts (
   id TEXT PRIMARY KEY, kind TEXT NOT NULL, task_id TEXT, run_id TEXT, path TEXT NOT NULL,
   sha256 TEXT, created_at TEXT NOT NULL, meta TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS idempotency (
-  key TEXT NOT NULL, scope TEXT NOT NULL, request_hash TEXT NOT NULL,
+  key TEXT NOT NULL, scope TEXT NOT NULL,
   status INTEGER NOT NULL, response TEXT NOT NULL, PRIMARY KEY (key, scope));
 CREATE TABLE IF NOT EXISTS meta (k TEXT PRIMARY KEY, v TEXT NOT NULL);
 """
@@ -146,8 +146,8 @@ class Store:
 
     # ---- idempotency ----
     def idem_get(self, key: str, scope: str) -> sqlite3.Row | None:
-        r = self._q("SELECT request_hash, status, response FROM idempotency WHERE key=? AND scope=?", (key, scope))
+        r = self._q("SELECT status, response FROM idempotency WHERE key=? AND scope=?", (key, scope))
         return r[0] if r else None
 
-    def idem_put(self, key: str, scope: str, request_hash: str, status: int, response: Any) -> None:
-        self._q("INSERT OR IGNORE INTO idempotency VALUES (?,?,?,?,?)", (key, scope, request_hash, status, json.dumps(response)))
+    def idem_put(self, key: str, scope: str, status: int, response: Any) -> None:
+        self._q("INSERT OR IGNORE INTO idempotency VALUES (?,?,?,?)", (key, scope, status, json.dumps(response)))
