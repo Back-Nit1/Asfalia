@@ -25,6 +25,7 @@ def main(argv: list[str] | None = None) -> None:
     p.add_argument("--plan", default=None, help="orchestrator YAML (task DAG)")
     p.add_argument("--episodes-dir", action="append", default=[], help="extra directory of episode JSON exports")
     p.add_argument("--run-scheduler", action="store_true", help="tick the scheduler in this process")
+    p.add_argument("--no-agent", action="store_true", help="never start the coding runtime (human-owned tasks only)")
     p.add_argument("--stream-interval", type=float, default=0.25, help="SSE poll seconds (0.2-0.5 => 2-5 Hz)")
     p.add_argument("--static-dir", default="frontend/dist")
     a = p.parse_args(argv)
@@ -32,7 +33,7 @@ def main(argv: list[str] | None = None) -> None:
     Path(a.db).parent.mkdir(parents=True, exist_ok=True)
     store = Store(a.db)
     cfg, tasks = load_plan(a.plan) if a.plan else (PlanConfig(), [])
-    sched = Scheduler(store, cfg, tasks, default_adapter())
+    sched = Scheduler(store, cfg, tasks, None if a.no_agent else default_adapter())
     app = create_app(store, sched, auth, Library(FIXTURES, *map(Path, a.episodes_dir)), a.stream_interval, a.static_dir, a.run_scheduler)
     uvicorn.run(app, host=a.host, port=a.port)
 

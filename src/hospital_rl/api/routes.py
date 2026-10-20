@@ -76,7 +76,7 @@ def build_router() -> APIRouter:
     def tasks(request: Request):
         sch = request.app.state.scheduler
         all_ = sch.all()
-        return {"runtime": sch.runtime_status(),
+        return {"runtime": sch.runtime_status(), "now": sch.clock(),
                 "tasks": [{**task_json(t), "path_conflicts": sch.path_conflicts(t, all_)} for t in all_]}
 
     @op.get("/tasks/{task_id}")

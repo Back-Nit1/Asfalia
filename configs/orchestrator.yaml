@@ -1,0 +1,57 @@
+# Fixed task DAG for building this repository (prompt section 14). Loaded by hospital_rl.orchestration.tasks.load_plan.
+# A task becomes ready only when every dependency is `integrated`. Acceptance commands are run by the orchestrator itself.
+config:
+  max_concurrency: 3          # raise to 6 only after integration is stable
+  retry_cap: 2                # retries after the first attempt, then `blocked` with evidence
+  lease_seconds: 600
+  task_timeout_seconds: 3600
+  acceptance_timeout_seconds: 900
+  repo: .
+  worktree_root: ../hospital-rl-worktrees
+  base_commit: main
+  integration_branch: integration
+  integration_repo: ../hospital-rl-integration   # dedicated checkout of the integration branch
+  combined_suite: ["pytest -q"]
+
+tasks:
+  - id: world-engine
+    role: World/clinical workflows
+    owner: human
+    description: Transition engine, reachability, identity rules, workload dependencies, world fixtures.
+    assigned_paths: [src/hospital_rl/engine, src/hospital_rl/schemas.py, src/hospital_rl/events.py, src/hospital_rl/runner.py, configs/tiny.yaml, tests/test_engine.py, tests/test_events.py]
+    acceptance_commands: ["pytest -q tests/test_engine.py tests/test_events.py"]
+
+  - id: dashboard-api
+    role: Dashboard/API
+    owner: human
+    description: SQLite store, task orchestrator, FastAPI, SSE, React dashboard, episode replay.
+    assigned_paths: [src/hospital_rl/api, src/hospital_rl/orchestration, frontend, configs/orchestrator.yaml, tests/api, tests/orchestration, docs/dashboard.md]
+    acceptance_commands: ["pytest -q tests/api tests/orchestration"]
+
+  - id: attacker-curriculum
+    role: Attacker curriculum
+    description: Attacker observations, scripted opponents, attacker tasks and training config.
+    dependencies: [world-engine]
+    assigned_paths: [src/hospital_rl/envs/single_role.py, src/hospital_rl/policies/scripted.py, configs/attacker_school.yaml, tests/attacker]
+    acceptance_commands: ["pytest -q tests/attacker"]
+
+  - id: defender-curriculum
+    role: Defender curriculum
+    description: Defender observations, remediation, cost accounting, defender tasks and config.
+    dependencies: [world-engine]
+    assigned_paths: [src/hospital_rl/envs/curricula.py, src/hospital_rl/policies/heuristic.py, configs/defender_school.yaml, tests/defender]
+    acceptance_commands: ["pytest -q tests/defender"]
+
+  - id: rl-infra
+    role: RL/experiment infrastructure
+    description: PPO integration, rollout protocol, checkpoint transfer, league, Modal/Daytona adapters.
+    dependencies: [attacker-curriculum, defender-curriculum]
+    assigned_paths: [src/hospital_rl/training, src/hospital_rl/policies/ppo.py, src/hospital_rl/policies/checkpoint.py, src/hospital_rl/infra, tests/training, tests/infra]
+    acceptance_commands: ["pytest -q tests/training tests/infra"]
+
+  - id: evaluation-perf
+    role: Evaluation/performance
+    description: Leakage/invariant tests, benchmark splits, cross-play, profiling, C++ inference adapter.
+    dependencies: [rl-infra]
+    assigned_paths: [src/hospital_rl/evaluation, benchmarks, native, tests/evaluation]
+    acceptance_commands: ["pytest -q tests/evaluation"]
