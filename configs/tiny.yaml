@@ -1,0 +1,44 @@
+name: tiny
+horizon: 40
+budget: 30
+action_capacity: 2
+maintenance_windows: [[0, 100]]
+nodes:
+  - {id: vpn, asset_type: vpn, zone: dmz, external: true, vulns: [initial_access], logging: 1}
+  - {id: ws1, asset_type: workstation, zone: clinical, vulns: [priv_esc], credentials: [c_clin], allowed_roles: [clinician, device_gw]}
+  - {id: idp, asset_type: idp, zone: core, credentials: [c_admin]}
+  - {id: ehr, asset_type: ehr, zone: core, records: 10, sensitivity: 1.0, encrypted: true,
+     vulns: [lateral], allowed_roles: [clinician, support], restrictable_roles: [support]}
+  - {id: pacs, asset_type: pacs, zone: clinical, records: 6, sensitivity: 0.6, vulns: [lateral], allowed_roles: [clinician, device_gw]}
+  - {id: billing, asset_type: billing, zone: business, records: 4, sensitivity: 0.3, allowed_roles: [billing_ops, support]}
+  - {id: api, asset_type: k8s_service, zone: core}
+  - {id: pump, asset_type: device, zone: device, patchable: false, vulns: [lateral]}
+edges:
+  - {src: vpn, dst: ws1, kind: reach}
+  - {src: ws1, dst: vpn, kind: reach}
+  - {src: ws1, dst: ehr, kind: reach}
+  - {src: ehr, dst: ws1, kind: reach}
+  - {src: ws1, dst: pacs, kind: reach}
+  - {src: pacs, dst: ws1, kind: reach}
+  - {src: ws1, dst: idp, kind: reach}
+  - {src: ehr, dst: api, kind: reach}
+  - {src: api, dst: ehr, kind: reach}
+  - {src: billing, dst: api, kind: reach}
+  - {src: api, dst: billing, kind: reach}
+  - {src: pump, dst: pacs, kind: reach}
+  - {src: pacs, dst: pump, kind: reach}
+  - {src: vpn, dst: ws1, kind: trust}
+  - {src: ehr, dst: idp, kind: depends}
+  - {src: billing, dst: api, kind: depends}
+identities:
+  - {id: dr_a, role: clinician}
+  - {id: sup_a, role: support}
+credentials:
+  - {id: c_clin, identity: dr_a, scope: [ws1, ehr, pacs]}
+  - {id: c_admin, identity: sup_a, scope: [ehr, billing]}
+workflows:
+  - {id: chart, kind: chart_lookup, rate: 2, path: [ws1, ehr], role: clinician, deadline: 3}
+  - {id: imaging, kind: image_retrieval, rate: 1, path: [ws1, pacs], role: clinician, deadline: 3}
+  - {id: pump_tel, kind: device_telemetry, rate: 1, path: [pump, pacs], role: device_gw, deadline: 3, critical: false}
+  - {id: bill, kind: billing_sync, rate: 1, path: [billing, api], role: billing_ops, deadline: 3, critical: false}
+  - {id: er, kind: emergency_access, rate: 0.5, path: [ws1, ehr], role: clinician, deadline: 2, emergency: true}
