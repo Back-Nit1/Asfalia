@@ -1,0 +1,14 @@
+tiny seed=7 tie=defender_first return={'attacker': -1.6972972972972977, 'defender': -38.713513513513
+t=  0 A:discover(vpn) D:increase_logging(ehr) rD=-0.015 events=2
+t=  1 A:attempt_initial_access(vpn) D:increase_logging(ehr) rD=-0.017 events=2
+t=  2 A:probe(vpn) D:increase_logging(pacs) rD=-0.018 events=3
+t=  3 A:move(ws1) D:increase_logging(pacs) rD=-0.020 events=2
+t=  4 A:move(ws1) D:wait(None) rD=-0.007 events=0
+t=  5 A:probe(ws1) D:wait(None) rD=-0.007 events=0
+t=  6 A:attempt_privilege_change(ws1) D:wait(None) rD=-0.007 events=0
+t=  7 A:attempt_privilege_change(ws1) D:wait(None) rD=-0.007 events=0
+t=  8 A:attempt_privilege_change(ws1) D:wait(None) rD=-0.007 events=0
+t=  9 A:discover(ws1) D:wait(None) rD=-0.007 events=0
+t= 10 A:move(ehr) D:wait(None) rD=-0.007 events=0
+t= 11 A:move(ehr) D:wait(None) rD=-0.007 events=0
+t= 12 A:collect(ehr) D:wait(None) rD=-0.007 events=0

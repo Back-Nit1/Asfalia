@@ -1,0 +1,6 @@
+split=validation hash=40a031b1a42fa0e9 n=20  (scripted attacker; uncalibrated)
+defender              exposure  crit_ok   spend  feasible
+noop                     0.477    1.000     0.0  yes
+static_hardening         0.000    0.950    36.0  NO (availability)
+greedy                   0.335    0.783    36.0  NO (availability)
+isolate_everything       0.000    0.107    36.0  NO (availability)
