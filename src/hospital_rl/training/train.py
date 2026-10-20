@@ -60,7 +60,8 @@ def control_from_file(path: str | Path) -> Callable[[], str | None]:
 
 
 def train(cfg: TrainConfig, out_dir: str | Path, *, resume: bool = False,
-          control: Callable[[], str | None] = lambda: None, log: Callable[[str], None] = print) -> TrainResult:
+          control: Callable[[], str | None] = lambda: None, log: Callable[[str], None] = print,
+          after_save: Callable[[Path], None] = lambda p: None) -> TrainResult:
     out = Path(out_dir)
     out.mkdir(parents=True, exist_ok=True)
     clean_stale_tmp(out)
@@ -95,11 +96,13 @@ def train(cfg: TrainConfig, out_dir: str | Path, *, resume: bool = False,
         kw = dict(role=cfg.role, max_nodes=max_nodes, config_hash=cfg.hash(), seed=cfg.seed, **ids)
         if path.exists():
             save_checkpoint(latest, ppo, parent_id=grand, **kw)
+            after_save(latest)
             return latest
         m = save_checkpoint(path, ppo, parent_id=parent_id, **kw)
         grand, parent_id = parent_id, m.checkpoint_id
         atomic_write(latest, path.read_bytes())
         atomic_write(latest.with_name("latest.pt.meta.json"), path.with_name(path.name + ".meta.json").read_bytes())
+        after_save(path)
         return path
 
     history, reason, rounds, dirty = [], "done", 0, not resumed

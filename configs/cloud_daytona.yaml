@@ -1,0 +1,14 @@
+# DEFERRED: Daytona backend is a stub. Secret name: DAYTONA_API_KEY.
+backend: daytona
+train:
+  role: defender
+  total_steps: 20000
+  n_envs: 8
+  rollout_len: 64
+  env_factory: "toy_env:make_env"
+caps:
+  cpu: 2
+  memory_mb: 2048
+  timeout_s: 300
+  max_containers: 1
+  max_retries: 0

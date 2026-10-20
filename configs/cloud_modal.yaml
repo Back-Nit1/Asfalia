@@ -1,0 +1,19 @@
+# Modal first mode: ONE bounded job (vectorized envs + learner together). Secret *names* only.
+backend: modal
+app_name: hospital-rl-train
+volume_name: hospital-rl-runs
+secret_names: []          # Modal Secret objects to mount into the job; training itself needs none
+train:
+  role: defender
+  total_steps: 20000
+  n_envs: 8
+  rollout_len: 64
+  env_factory: "toy_env:make_env"
+caps:
+  cpu: 2
+  memory_mb: 2048
+  timeout_s: 300
+  max_containers: 1
+  max_retries: 0
+estimate:
+  steps_per_sec: 5000   # assumption; replace with a measured number
