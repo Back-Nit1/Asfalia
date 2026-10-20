@@ -34,3 +34,17 @@ class _Idle:
     def act(self, view, legal):
         from ..engine.transitions import WAIT
         return WAIT
+
+
+def tie_sensitivity(split: str, n: int, size: int = 12) -> dict:
+    """Same scenarios and seeds under each documented tie policy; reports how much outcomes move."""
+    seeds = list(SPLITS[split]["seeds"])[:n]
+    out = {}
+    for tie in ("defender_first", "attacker_first"):
+        res = {}
+        for name, mk in DEFENDERS.items():
+            runs = [run_episode(scenario_for(split, s, size).model_copy(update={"tie_policy": tie}), s,
+                                ScriptedAttacker(), mk())["metrics"] for s in seeds]
+            res[name] = {k: _ci([r[k] for r in runs]) for k in ("weighted_exposure_frac", "critical_success")}
+        out[tie] = res
+    return out

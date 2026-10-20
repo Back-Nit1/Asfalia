@@ -21,6 +21,7 @@ def main(argv: list[str] | None = None) -> int:
     bm.add_argument("--episodes", type=int, default=20)
     bm.add_argument("--size", type=int, default=8)
     bm.add_argument("--out")
+    bm.add_argument("--tie-sensitivity", action="store_true")
     for name in ("train", "evaluate", "adapt", "orchestrate", "dashboard", "cloud-plan", "cleanup",
                  "export-policy", "benchmark-inference"):
         sub.add_parser(name)
@@ -89,6 +90,9 @@ def _bench(args) -> int:
 
     from .evaluation import benchmark
 
+    if args.tie_sensitivity:
+        print(json.dumps(benchmark.tie_sensitivity(args.split, args.episodes, args.size), indent=1))
+        return 0
     r = benchmark.run(args.split, args.episodes, args.size)
     print(f"split={r['split']} hash={r['split_hash']} n={r['n_scenarios']}  (scripted attacker; uncalibrated)")
     print(f"{'defender':20}{'exposure':>10}{'crit_ok':>9}{'spend':>8}  feasible")
