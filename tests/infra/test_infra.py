@@ -176,7 +176,7 @@ def test_real_modal_sdk_surface_matches():
     import inspect
     assert {"volumes", "cpu", "memory", "timeout", "retries", "max_containers", "secrets"} <= set(
         inspect.signature(modal.App.function).parameters)
-    assert "detach" in inspect.signature(modal.App.run).parameters
+    assert "detach" in inspect.signature(modal.App.run).parameters  # we deliberately do NOT use it
     assert {"commit", "reload", "batch_upload"} <= set(dir(modal.Volume))
     assert {"cancel", "from_id", "get"} <= set(dir(modal.FunctionCall))
     cfg = load_modal_config(CONFIGS / "cloud_modal.yaml")

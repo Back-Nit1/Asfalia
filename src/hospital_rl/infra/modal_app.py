@@ -4,7 +4,7 @@ SDK API verified against modal 1.6.2 (installed signatures + docs): ``modal.App`
 volumes, secrets, cpu, memory[MiB], timeout, retries, max_containers)``, ``Function.spawn`` ->
 ``FunctionCall`` (``.get(timeout)``, ``.cancel(terminate_containers)``, ``FunctionCall.from_id``),
 ``Volume.from_name(create_if_missing)``, ``Volume.commit()/reload()``, ``Volume.batch_upload``,
-``App.run(detach=True)``. Everything Modal-specific lives in ``ModalGateway``; ``ModalBackend`` holds
+``App.run()``. Everything Modal-specific lives in ``ModalGateway``; ``ModalBackend`` holds
 the logic (cap enforcement, idempotent submit, state mapping) and is tested with a fake gateway.
 The real gateway is only exercised by an explicit, tiny, credentialed smoke run (see docs).
 
@@ -13,6 +13,7 @@ reads their values.
 """
 from __future__ import annotations
 
+import contextlib
 import io
 from pathlib import Path
 from typing import Protocol
@@ -120,6 +121,7 @@ class RealModalGateway:
         import modal
 
         self.modal, self.cfg = modal, cfg
+        self._stacks: dict[str, contextlib.ExitStack] = {}
         c = cfg.caps
         self.app = modal.App(cfg.app_name)
         self.vol = modal.Volume.from_name(cfg.volume_name, create_if_missing=True)
@@ -147,22 +149,40 @@ class RealModalGateway:
         self.fn = train_job
 
     def spawn(self, spec_json: str) -> str:
-        with self.app.run(detach=True):  # detach: the app outlives this client process
-            return self.fn.spawn(spec_json).object_id
+        # Not detached: detached apps keep their container alive after the function returns (observed in a
+        # real smoke run). The app lives as long as this client holds the run context and is stopped
+        # (containers terminated) when the call ends, is cancelled, or close() is called. Consequence: the
+        # client process must stay up for the job's duration; durable state lives on the Volume.
+        stack = contextlib.ExitStack()
+        stack.enter_context(self.app.run())
+        call_id = self.fn.spawn(spec_json).object_id
+        self._stacks[call_id] = stack
+        return call_id
+
+    def _release(self, call_id: str) -> None:
+        if stack := self._stacks.pop(call_id, None):
+            stack.close()
+
+    def close(self) -> None:
+        for call_id in list(self._stacks):
+            self._release(call_id)
 
     def poll(self, call_id):
         m = self.modal
         try:
-            return "done", m.FunctionCall.from_id(call_id).get(timeout=0)
+            out = "done", m.FunctionCall.from_id(call_id).get(timeout=0)
         except (TimeoutError, m.exception.TimeoutError):
             return "running", {}
         except m.exception.FunctionTimeoutError as e:
-            return "timed_out", str(e)
+            out = "timed_out", str(e)
         except Exception as e:  # noqa: BLE001 - surface any remote failure as FAILED with its message
-            return "failed", f"{type(e).__name__}: {e}"
+            out = "failed", f"{type(e).__name__}: {e}"
+        self._release(call_id)
+        return out
 
     def cancel(self, call_id):
         self.modal.FunctionCall.from_id(call_id).cancel(terminate_containers=True)
+        self._release(call_id)
 
     def write_control(self, run_id, attempt_id, word):
         with self.vol.batch_upload(force=True) as up:

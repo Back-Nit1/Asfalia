@@ -1,0 +1,63 @@
+{
+  "device": "cpu",
+  "threads": 1,
+  "machine": "arm64",
+  "platform": "macOS-26.4-arm64-arm-64bit-Mach-O",
+  "model": "toy (trained 256 steps)",
+  "results": {
+    "python": {
+      "load_ms": 4.1,
+      "batch_1": {
+        "p50_us": 141.1,
+        "p95_us": 143.7,
+        "throughput_samples_per_s": 7069
+      },
+      "batch_32": {
+        "p50_us": 235.3,
+        "p95_us": 246.1,
+        "throughput_samples_per_s": 135146
+      },
+      "batch_256": {
+        "p50_us": 1015.8,
+        "p95_us": 1107.7,
+        "throughput_samples_per_s": 250002
+      }
+    },
+    "onnxruntime": {
+      "load_ms": 277.3,
+      "batch_1": {
+        "p50_us": 62.4,
+        "p95_us": 66.6,
+        "throughput_samples_per_s": 15983
+      },
+      "batch_32": {
+        "p50_us": 184.2,
+        "p95_us": 189.5,
+        "throughput_samples_per_s": 173059
+      },
+      "batch_256": {
+        "p50_us": 909.1,
+        "p95_us": 964.1,
+        "throughput_samples_per_s": 280428
+      }
+    },
+    "cpp": {
+      "load_ms": 59.8,
+      "batch_1": {
+        "p50_us": 53.7,
+        "p95_us": 55.2,
+        "throughput_samples_per_s": 18621
+      },
+      "batch_32": {
+        "p50_us": 185.3,
+        "p95_us": 189.0,
+        "throughput_samples_per_s": 172289
+      },
+      "batch_256": {
+        "p50_us": 900.8,
+        "p95_us": 925.3,
+        "throughput_samples_per_s": 284699
+      }
+    }
+  }
+}

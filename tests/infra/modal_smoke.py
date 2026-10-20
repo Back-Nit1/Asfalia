@@ -30,10 +30,11 @@ jid = be.submit(spec)
 print("submitted", jid, "(modal call id)")
 while not (st := be.status(jid)).state.terminal and time.time() - t0 < 300:
     time.sleep(3)
+gw.close()  # stops the Modal app + containers
 print("final:", st.state.value, st.detail, st.result, f"{time.time() - t0:.0f}s wall")
 files = [e.path for e in gw.vol.listdir(f"/{run}/{attempt}")]
 print("volume files:", files)
-assert st.state.value == "done" and "manifest.json" in files and "latest.pt" in files
+assert st.state.value == "done" and any(f.endswith("manifest.json") for f in files) and any(f.endswith("latest.pt") for f in files)
 # cleanup: delete this run's files from the Volume
 gw.vol.remove_file(f"/{run}", recursive=True)
 print("cleanup: removed", f"/{run}", "->", [e.path for e in gw.vol.listdir("/")])
