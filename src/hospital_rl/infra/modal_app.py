@@ -129,6 +129,7 @@ class RealModalGateway:
         vol = self.vol
 
         @self.app.function(image=image, volumes={VOLUME_MOUNT: vol}, secrets=[modal.Secret.from_name(n) for n in cfg.secret_names],
+                           serialized=True,  # built inside a function from config caps; Modal requires global scope otherwise
                            cpu=c.cpu, memory=c.memory_mb, timeout=c.timeout_s, max_containers=c.max_containers,
                            retries=modal.Retries(max_retries=c.max_retries, initial_delay=1.0) if c.max_retries else None)
         def train_job(spec_json: str) -> dict:
