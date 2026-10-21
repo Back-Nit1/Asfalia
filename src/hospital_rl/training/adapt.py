@@ -18,6 +18,7 @@ import numpy as np
 from ..envs.encoding import obs_schema_hash
 from ..envs.single_role import SingleRoleEnv
 from ..evaluation.splits import split_hash
+from ..evaluation.strata import require_trainable
 from ..evaluation.transfer import (SCRIPTED, CheckpointError, _Learned, _Scripted, eval_seeds, load_actor, play,
                                    scripted_actor)
 from ..policies.checkpoint import IncompatibleCheckpointError, _code_revision, load_for_role
@@ -69,6 +70,7 @@ class AdaptEnv(SingleRoleEnv):
 
 
 def adapt_env(role: str, world: dict, league: str, split: str = "train", seed: int = 0) -> AdaptEnv:
+    require_trainable(split, "adaptation")
     return AdaptEnv(world_penv(WorldConfig(**world), split), role, LeagueOpponent(league, OTHER[role], seed))
 
 

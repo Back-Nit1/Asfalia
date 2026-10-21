@@ -29,6 +29,8 @@ def main(argv: list[str] | None = None) -> None:
     p.add_argument("--stream-interval", type=float, default=0.25, help="SSE poll seconds (0.2-0.5 => 2-5 Hz)")
     p.add_argument("--experiments-root", default=None, help="enable the experiment controller; job artifacts live here")
     p.add_argument("--fake-backend", action="store_true", help="with --experiments-root: deterministic FAKE backend+evaluator (no training)")
+    p.add_argument("--world-config", default="configs/hospital40.yaml", help="shared-world config for real frozen evaluations")
+    p.add_argument("--evaluation-split", choices=["validation", "test"], default="validation")
     p.add_argument("--tick-seconds", type=float, default=2.0)
     p.add_argument("--static-dir", default="frontend/dist")
     a = p.parse_args(argv)
@@ -47,8 +49,10 @@ def main(argv: list[str] | None = None) -> None:
             from ..experiments.fakes import FakeBackend, FakeEvaluator
             backend, evaluator = FakeBackend(root / "jobs"), FakeEvaluator(FIXTURES / "fixture_tiny_episode.json")
         else:
+            from ..experiments.evaluator import FrozenEvaluator
             from ..infra.local_backend import LocalBackend
-            backend, evaluator = LocalBackend(root / "jobs"), None     # no evaluation backend wired yet: submissions are refused honestly
+            backend = LocalBackend(root / "jobs", registry=root / ".registry" / "local")
+            evaluator = FrozenEvaluator(a.world_config, a.evaluation_split)
         controller = Controller(store, backend, FsReader(root / "jobs"), evaluator=evaluator, episodes_dir=str(root / "episodes"))
     app = create_app(store, sched, auth, Library(FIXTURES, *eps), a.stream_interval, a.static_dir, a.run_scheduler,
                      tick_seconds=a.tick_seconds, controller=controller)

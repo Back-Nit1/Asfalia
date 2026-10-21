@@ -33,6 +33,8 @@ def _in_split(split: str, seed: int) -> int:
 def hospital_single(role: str, size: int = 40, split: str = "train", difficulty: float = 0.7, horizon: int = 60,
                     opponent: str = "scripted", base_logging: int = 0) -> SingleRoleEnv:
     """Shared-world single-role env against a scripted opponent (learned opponents are injected by the caller)."""
+    from ..evaluation.strata import require_trainable
     from ..policies.scripted import GreedyDefender, ScriptedAttacker
+    require_trainable(split, "training")
     pol = ScriptedAttacker if role == "defender" else GreedyDefender
     return SingleRoleEnv(hospital_penv(size, split, difficulty, horizon, base_logging), role, ScriptedOpponent(pol))

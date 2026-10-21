@@ -359,14 +359,24 @@ class Controller:
         return c
 
     def compatibility_errors(self, atk: dict, dfn: dict) -> list[str]:
+        from ..envs.encoding import obs_schema_hash
+        from ..schemas import catalog_hash
+
         errs = []
         if atk["role"] != "attacker":
             errs.append(f"{atk['id']} is a {atk['role']} checkpoint, expected attacker")
         if dfn["role"] != "defender":
             errs.append(f"{dfn['id']} is a {dfn['role']} checkpoint, expected defender")
-        for f in ("catalog_hash", "observation_schema_hash"):
-            if atk["meta"].get(f) != dfn["meta"].get(f):
-                errs.append(f"{f}: attacker has {atk['meta'].get(f)!r}, defender has {dfn['meta'].get(f)!r}")
+        if atk["meta"].get("catalog_hash") != dfn["meta"].get("catalog_hash"):
+            errs.append(f"catalog_hash: attacker has {atk['meta'].get('catalog_hash')!r}, "
+                        f"defender has {dfn['meta'].get('catalog_hash')!r}")
+        for role, checkpoint in (("attacker", atk), ("defender", dfn)):
+            if checkpoint["role"] == role:
+                expected = obs_schema_hash(role)
+                if checkpoint["meta"].get("observation_schema_hash") != expected:
+                    errs.append(f"{checkpoint['id']} observation_schema_hash is incompatible with current {role} schema")
+                if checkpoint["meta"].get("catalog_hash") != catalog_hash():
+                    errs.append(f"{checkpoint['id']} catalog_hash is incompatible with the current action catalog")
         for c in (atk, dfn):
             if not c["available"]:
                 errs.append(f"{c['id']} artifacts were cleaned up")

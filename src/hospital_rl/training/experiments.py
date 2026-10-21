@@ -20,6 +20,7 @@ import yaml
 from pydantic import BaseModel, ValidationError
 
 from ..evaluation.transfer import CheckpointError, load_actor, report
+from ..evaluation.strata import StratumError, check_training_config
 from ..policies.checkpoint import IncompatibleCheckpointError, _code_revision
 from .adapt import OTHER, _require, adapt
 from .lineage import LineageError, claim_run
@@ -78,8 +79,10 @@ def load_experiment(path: str) -> ExperimentConfig:
     if not p.is_file():
         raise ValueError(f"experiment config not found: {p}")
     try:
-        c = ExperimentConfig.model_validate(yaml.safe_load(p.read_text()))
-    except (ValidationError, yaml.YAMLError) as e:
+        raw = yaml.safe_load(p.read_text())
+        check_training_config(raw, str(p))
+        c = ExperimentConfig.model_validate(raw)
+    except (ValidationError, yaml.YAMLError, StratumError) as e:
         raise ValueError(f"invalid experiment config {p}: {e}") from e
     if bool(c.school) == bool(c.checkpoints):
         raise ValueError("exactly one of `school` (train both roles) or `checkpoints` (explicit paths) is required")

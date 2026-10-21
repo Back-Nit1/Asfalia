@@ -6,6 +6,7 @@ import random
 import yaml
 
 from ..evaluation.splits import SPLITS
+from ..evaluation.strata import check_training_config, require_trainable
 from ..policies.scripted import GreedyDefender, IsolateEverything, Noop, RandomPolicy, ScriptedAttacker, StaticHardening
 from ..scenarios import generate
 from .parallel_env import HospitalParallelEnv
@@ -16,7 +17,9 @@ OPPONENTS = {"noop": Noop, "static": StaticHardening, "greedy": GreedyDefender, 
 
 
 def load_config(path: str) -> dict:
-    return yaml.safe_load(open(path))
+    cfg = yaml.safe_load(open(path))
+    check_training_config(cfg, path)
+    return cfg
 
 
 def scenario_fn(cfg: dict, level: int, split: str = "train"):
@@ -47,5 +50,6 @@ class _Mixture:
 
 
 def build_env(cfg: dict, level: int = 0, split: str = "train", seed: int = 0) -> SingleRoleEnv:
+    require_trainable(split, "curriculum")
     penv = HospitalParallelEnv(scenario_fn(cfg, level, split))
     return SingleRoleEnv(penv, cfg["role"], _Mixture(cfg["levels"][level]["opponents"], seed))

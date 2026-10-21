@@ -9,7 +9,9 @@ from pathlib import Path
 
 from ..infra.artifacts import DirArtifactStore
 from ..infra.backend import JobBackend, JobSpec, JobState, JobStatus
+from ..envs.encoding import obs_schema_hash
 from ..policies.checkpoint import atomic_write
+from ..schemas import catalog_hash
 
 STEP = 64          # env steps per fake round
 
@@ -47,8 +49,9 @@ class FakeBackend(JobBackend):
         cid = hashlib.sha256(f"{s.run_id}/{s.attempt_id}/{j['version']}".encode()).hexdigest()[:16]
         pt = d / f"ckpt_{j['version']:06d}.pt"
         atomic_write(pt, f"fake-weights:{cid}".encode())
-        meta = {"checkpoint_id": cid, "parent_checkpoint_id": j["parent"], "role": s.train_config["role"], "catalog_hash": "fake-catalog",
-                "observation_schema_hash": "fake-obs", "training_steps": j["steps"], "policy_version": j["version"],
+        role = s.train_config["role"]
+        meta = {"checkpoint_id": cid, "parent_checkpoint_id": j["parent"], "role": role, "catalog_hash": catalog_hash(),
+                "observation_schema_hash": obs_schema_hash(role), "training_steps": j["steps"], "policy_version": j["version"],
                 "config_hash": "fake", "seed": s.train_config["seed"]}
         atomic_write(pt.with_name(pt.name + ".meta.json"), json.dumps(meta).encode())
         atomic_write(d / "latest.pt", pt.read_bytes())

@@ -3,6 +3,7 @@ import json
 import pytest
 
 from hospital_rl.evaluation import transfer
+from hospital_rl.experiments.evaluator import FrozenEvaluator
 from hospital_rl.policies.checkpoint import IncompatibleCheckpointError
 from hospital_rl.training.world import WorldConfigError, load_world, world_penv
 
@@ -60,3 +61,14 @@ def test_report_errors_and_exit_codes(school_ckpts, world_path, tmp_path, capsys
     out = tmp_path / "r.json"
     assert transfer.main(base + ["--config", world_path, "--episodes", "1", "--out", str(out)]) == 0
     assert json.loads(out.read_text())["stage"] == "D"
+
+
+def test_controller_evaluator_runs_real_pair_and_exports_replay(school_ckpts, world_path, tmp_path):
+    evaluator = FrozenEvaluator(world_path)
+    spec = {"suite": "frozen", "episodes": 2, "seed": 10_000, "attacker_checkpoint_id": "atk-id",
+            "defender_checkpoint_id": "def-id", "attacker_sha256": "a", "defender_sha256": "d"}
+    result = evaluator.run(spec, school_ckpts, str(tmp_path / "episodes" / "eval-1"))
+    assert result["frozen"] and result["pairs"] and result["pairs"][0]["n"] == 2
+    replay = json.loads((tmp_path / "episodes" / f"{result['episode_ids'][0]}.json").read_text())
+    assert replay["steps"] and replay["topology"]["nodes"] and replay["metrics"]
+    assert json.loads((tmp_path / "episodes" / "eval-1" / "evaluation.json").read_text()) == result

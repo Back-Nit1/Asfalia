@@ -40,6 +40,16 @@ def test_test_stratum_cannot_enter_training():
             S.require_trainable("test", use)
 
 
+def test_training_environment_builders_reject_test_stratum():
+    from hospital_rl.envs.curricula import build_env
+    from hospital_rl.envs.factories import hospital_single
+    cfg = yaml.safe_load((ROOT / "configs/attacker_school.yaml").read_text())
+    with pytest.raises(S.StratumError, match="report-only"):
+        build_env(cfg, split="test")
+    with pytest.raises(S.StratumError, match="report-only"):
+        hospital_single("attacker", split="test")
+
+
 def test_checked_in_configs_never_name_test():
     for f in list((ROOT / "configs").rglob("*.yaml")):
         S.check_training_config(yaml.safe_load(f.read_text()), f.name)
