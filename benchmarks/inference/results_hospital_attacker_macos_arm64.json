@@ -1,0 +1,239 @@
+{
+  "backends": {
+    "cpp": {
+      "batches": {
+        "1": {
+          "p50_us": 89.5,
+          "p95_us": 97.3,
+          "throughput_samples_per_s": 10962
+        },
+        "256": {
+          "p50_us": 6483.0,
+          "p95_us": 6782.9,
+          "throughput_samples_per_s": 39393
+        },
+        "32": {
+          "p50_us": 893.7,
+          "p95_us": 992.0,
+          "throughput_samples_per_s": 35670
+        }
+      },
+      "env_steps_per_s": 1505.4,
+      "first_run_ms": 4.1,
+      "load_ms": 70.5,
+      "memory_mb": null
+    },
+    "onnxruntime": {
+      "batches": {
+        "1": {
+          "p50_us": 90.7,
+          "p95_us": 95.1,
+          "throughput_samples_per_s": 10899
+        },
+        "256": {
+          "p50_us": 6311.1,
+          "p95_us": 6599.5,
+          "throughput_samples_per_s": 40458
+        },
+        "32": {
+          "p50_us": 828.2,
+          "p95_us": 946.1,
+          "throughput_samples_per_s": 37965
+        }
+      },
+      "env_steps_per_s": 1458.3,
+      "first_run_ms": 2.4,
+      "load_ms": 16.4,
+      "memory_mb": null
+    },
+    "python": {
+      "batches": {
+        "1": {
+          "p50_us": 156.6,
+          "p95_us": 190.0,
+          "throughput_samples_per_s": 6162
+        },
+        "256": {
+          "p50_us": 10938.1,
+          "p95_us": 13444.2,
+          "throughput_samples_per_s": 22712
+        },
+        "32": {
+          "p50_us": 939.7,
+          "p95_us": 1138.9,
+          "throughput_samples_per_s": 33243
+        }
+      },
+      "env_steps_per_s": 1342.8,
+      "first_run_ms": 2.4,
+      "load_ms": 4.3,
+      "memory_mb": null
+    },
+    "python_compiled": {
+      "batches": {
+        "1": {
+          "p50_us": 119.6,
+          "p95_us": 157.8,
+          "throughput_samples_per_s": 7885
+        },
+        "256": {
+          "p50_us": 6505.7,
+          "p95_us": 7598.2,
+          "throughput_samples_per_s": 38949
+        },
+        "32": {
+          "p50_us": 782.4,
+          "p95_us": 1003.2,
+          "throughput_samples_per_s": 39693
+        }
+      },
+      "env_steps_per_s": 1422.0,
+      "first_run_ms": 4956.3,
+      "load_ms": 501.6,
+      "memory_mb": null
+    }
+  },
+  "corpus": {
+    "cells": [
+      "hub-12",
+      "tiered-12",
+      "flat-12",
+      "segmented-12",
+      "hub-24",
+      "tiered-24",
+      "flat-24",
+      "segmented-24",
+      "hub-40",
+      "tiered-40",
+      "flat-40",
+      "segmented-40",
+      "hub-60",
+      "tiered-60",
+      "flat-60",
+      "segmented-60"
+    ],
+    "parity_rows": 64,
+    "seed": 0,
+    "sha256": {
+      "extreme": "f421180ba98a0a19",
+      "typical": "17dcfd98109f1911"
+    }
+  },
+  "env": {
+    "role": "attacker",
+    "size": 40,
+    "steps": 300
+  },
+  "model": {
+    "catalog_hash": "61d1810d111caf0f",
+    "checkpoint_id": "0357c75dd86c3003",
+    "max_nodes": 64,
+    "observation_schema_hash": "e91b5533566e1b49",
+    "path": "runs/attacker/best.pt",
+    "policy_version": 108,
+    "role": "attacker",
+    "training_steps": 55296
+  },
+  "notes": [
+    "memory_mb is null: peak RSS in one process cannot be attributed to a single backend",
+    "load_ms is in-process and uses a warm file cache; first_run_ms includes lazy init/compile"
+  ],
+  "provenance": {
+    "cpu_count": 12,
+    "device": "cpu",
+    "machine": "arm64",
+    "numpy": "2.5.4",
+    "onnxruntime": "1.31.0",
+    "platform": "macOS-26.4-arm64-arm-64bit-Mach-O",
+    "python": "3.13.13",
+    "threads": 1,
+    "torch": "2.14.1"
+  },
+  "rows": [
+    {
+      "backend": "python",
+      "batch": 1,
+      "p50_us": 156.6,
+      "p95_us": 190.0,
+      "throughput_samples_per_s": 6162
+    },
+    {
+      "backend": "python",
+      "batch": 32,
+      "p50_us": 939.7,
+      "p95_us": 1138.9,
+      "throughput_samples_per_s": 33243
+    },
+    {
+      "backend": "python",
+      "batch": 256,
+      "p50_us": 10938.1,
+      "p95_us": 13444.2,
+      "throughput_samples_per_s": 22712
+    },
+    {
+      "backend": "python_compiled",
+      "batch": 1,
+      "p50_us": 119.6,
+      "p95_us": 157.8,
+      "throughput_samples_per_s": 7885
+    },
+    {
+      "backend": "python_compiled",
+      "batch": 32,
+      "p50_us": 782.4,
+      "p95_us": 1003.2,
+      "throughput_samples_per_s": 39693
+    },
+    {
+      "backend": "python_compiled",
+      "batch": 256,
+      "p50_us": 6505.7,
+      "p95_us": 7598.2,
+      "throughput_samples_per_s": 38949
+    },
+    {
+      "backend": "onnxruntime",
+      "batch": 1,
+      "p50_us": 90.7,
+      "p95_us": 95.1,
+      "throughput_samples_per_s": 10899
+    },
+    {
+      "backend": "onnxruntime",
+      "batch": 32,
+      "p50_us": 828.2,
+      "p95_us": 946.1,
+      "throughput_samples_per_s": 37965
+    },
+    {
+      "backend": "onnxruntime",
+      "batch": 256,
+      "p50_us": 6311.1,
+      "p95_us": 6599.5,
+      "throughput_samples_per_s": 40458
+    },
+    {
+      "backend": "cpp",
+      "batch": 1,
+      "p50_us": 89.5,
+      "p95_us": 97.3,
+      "throughput_samples_per_s": 10962
+    },
+    {
+      "backend": "cpp",
+      "batch": 32,
+      "p50_us": 893.7,
+      "p95_us": 992.0,
+      "throughput_samples_per_s": 35670
+    },
+    {
+      "backend": "cpp",
+      "batch": 256,
+      "p50_us": 6483.0,
+      "p95_us": 6782.9,
+      "throughput_samples_per_s": 39393
+    }
+  ],
+  "schema_version": 1
+}

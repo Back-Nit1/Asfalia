@@ -10,9 +10,9 @@ Everything here is verified by `pytest tests/training tests/infra` unless marked
 | `policies/checkpoint.py` | atomic save, resume, `load_for_role`, interrupt flag |
 | `training/train.py` | loop, control signals, `evaluate`, `main` |
 | `training/league.py`, `curriculum.py` | bounded league + cross-play, validation-gated curriculum |
-| `infra/` | `backend` (ABCs), `artifacts`, `job`, `local_backend`, `modal_app`, `daytona_backend`, `plan`, `inference` |
+| `infra/` | `backend` (ABCs), `artifacts`, `job`, `local_backend`, `modal_app`, `daytona_backend`, `plan`, `inference`, `inference_cli`, `inference_bench` |
 | `native/` | ONNX Runtime C++ runner + pybind11 bindings |
-| `benchmarks/inference/run.py` | backend comparison |
+| `benchmarks/inference/` | stored benchmark results; `run.py` wraps `infra/inference_bench` |
 
 ## PPO
 Own minimal PPO (GAE, clipped objective, value loss, entropy, minibatches, grad clip). No maintained library was
@@ -128,9 +128,40 @@ pytest tests/infra/test_native.py          # skipped (not passed) if the module 
 Linux/Windows builds: untested. The runner is in-process (no subprocess per action, no network), GIL released during
 `run`, bad dtype/layout rejected on the C++ side too.
 
-### Benchmark (toy model, one machine, 1 thread, CPU)
-`python benchmarks/inference/run.py [--checkpoint ...]`; stored: `benchmarks/inference/results_toy_macos_arm64.json`.
-Single run, toy 8-node model; no speedup target is claimed and the python backend remains the default.
+### Export / benchmark CLIs
+```bash
+hospital-rl export-policy --checkpoint runs/attacker/best.pt --out out/attacker.onnx --expect-role attacker \
+    [--expect-catalog-hash H] [--expect-observation-hash H] [--overwrite]   # one JSON object on stdout; exit 0 / 2
+hospital-rl benchmark-inference --checkpoint runs/attacker/best.pt [--backends python,python_compiled,onnxruntime,cpp] \
+    [--batches 1,32,256] [--warmup 30] [--repetitions 300] [--threads 1] [--env-steps 300] [--out report.json]
+```
+(until `cli.py` wires `benchmark-inference`: `python -m hospital_rl.infra.inference_bench ...`; see `docs/requests/agent-G.md`.)
+Export writes `<out>` and `<out>.meta.json` via temp files + rename, refuses to overwrite without `--overwrite`, and
+re-loads what it wrote. Every ONNX/native load runs `check_meta`: missing metadata, unknown `export_format`, or a
+role/catalog/observation-hash mismatch raises `IncompatibleCheckpointError`. GRU export remains unsupported.
+
+Benchmark: golden corpus = real hospital observations (hub/tiered/flat/segmented x 12/24/40/60 nodes, padded to 64, random
+legal play for both roles) plus an extreme-but-finite variant. Each backend must pass parity vs the Python reference
+(logits 1e-4 on legal entries, argmax equal outside the 1e-4 near-tie band) on both corpora, else exit 2 and no numbers.
+Timed unit = validation + normalization + inference + copy + argmax. `env_steps_per_s` = full single-role env loop, B=1.
+`memory_mb` is null (peak RSS is not attributable per backend in one process). A backend whose toolchain is missing is
+reported `unavailable`, not failed.
+
+### Measured (macOS arm64, 12 cores, 1 thread, ORT 1.31.0, torch 2.14.1; one run each, real hospital checkpoints)
+Checkpoints: `runs/attacker/best.pt` (55296 steps) and `runs/cloud/smoke/defender-s7/best.pt` (smoke-sized, 4096 steps).
+Stored: `benchmarks/inference/results_hospital_{attacker,defender}_macos_arm64.json`. B=1 p50 (us): python 153-157,
+python_compiled 120-121, onnxruntime 90, cpp 88-90. B=256 throughput (samples/s): python ~22k, others 36-40k. Env steps/s
+are within ~7% across backends (the simulator dominates). **Native C++ is not faster than ONNX Runtime** (same engine,
+differences are noise), so Python stays the default and ONNX the opt-in fast path; no speedup target exists.
+`python_compiled` costs ~5 s on first run. Caveat: loading the pip `onnxruntime` and the C++ release dylib in one
+process makes macOS print an Objective-C duplicate-class warning; benchmark numbers looked unaffected but run `cpp`
+alone (`--backends python,cpp`) if in doubt.
+
+Platforms: macOS arm64 built and tested (Apple clang, cmake 4.4.4, pybind11 3.1.0). Linux x86_64/aarch64: CMake logic
+is portable (`libonnxruntime.so`, RPATH) and the instructions above apply with the `onnxruntime-linux-*` release, but
+**no Linux build was run**. Without the toolchain `tests/infra/test_native.py` skips with one reason:
+"native module not built (needs cmake, pybind11, ONNX Runtime C++ release)".
+
 
 ## Tested vs deferred
 Tested: masked PPO, padding invariance, versioned rollouts, checkpoints, interrupts, league/curriculum, the common

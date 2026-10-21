@@ -20,6 +20,7 @@ legal logits differ by < 1e-4 (documented tie band).
 from __future__ import annotations
 
 import json
+import os
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import NamedTuple
@@ -65,6 +66,26 @@ def validate_batch(batch: dict[str, np.ndarray], meta: dict, state) -> int:
     return b
 
 
+EXPORT_FORMAT = 1
+META_KEYS = ("export_format", "checkpoint_id", "role", "catalog_hash", "observation_schema_hash", "max_nodes",
+             "policy_config", "normalizer", "policy_version", "training_steps")
+
+
+def check_meta(meta: dict, source, expect_role: str | None = None, expect_catalog_hash: str | None = None,
+               expect_obs_hash: str | None = None) -> dict:
+    """Single gate for every backend: required keys present, export format known, expectations met."""
+    missing = [k for k in META_KEYS if k not in meta]
+    if missing:
+        raise IncompatibleCheckpointError(f"{source}: metadata missing {missing}; re-export with this version")
+    if meta["export_format"] != EXPORT_FORMAT:
+        raise IncompatibleCheckpointError(f"{source}: export_format {meta['export_format']!r}, this build reads {EXPORT_FORMAT}")
+    for name, want in (("role", expect_role), ("catalog_hash", expect_catalog_hash),
+                       ("observation_schema_hash", expect_obs_hash)):
+        if want is not None and meta[name] != want:
+            raise IncompatibleCheckpointError(f"{source} {name}: has {meta[name]!r}, expected {want!r}")
+    return meta
+
+
 class InferenceBackend(ABC):
     name: str
     meta: dict
@@ -92,6 +113,15 @@ class PythonReferenceBackend(InferenceBackend):
                                np.ascontiguousarray(value.numpy(), np.float32), None)
 
 
+class PythonCompiledBackend(PythonReferenceBackend):
+    """``torch.compile`` of the same policy (dynamic shapes). Raises if the platform has no working compiler."""
+    name = "python_compiled"
+
+    def __init__(self, checkpoint: str | Path):
+        super().__init__(checkpoint)
+        self.policy = torch.compile(self.policy, dynamic=True)
+
+
 class _ExportWrapper(nn.Module):
     """Raw obs -> normalize (constants baked in) -> policy. What ONNX/native runtimes execute."""
 
@@ -114,12 +144,20 @@ class _ExportWrapper(nn.Module):
         return logits, value
 
 
-def export_onnx(checkpoint: str | Path, out: str | Path) -> dict:
-    """Export the feed-forward policy; metadata goes in the model's metadata_props and ``<out>.meta.json``."""
+def export_onnx(checkpoint: str | Path, out: str | Path, expect_role: str | None = None,
+                expect_catalog_hash: str | None = None, expect_obs_hash: str | None = None) -> dict:
+    """Export the feed-forward policy; metadata goes in the model's metadata_props and ``<out>.meta.json``.
+    Both files are written to temp names and renamed, so a failed export never leaves a partial model."""
     import onnx
 
     ckpt = load_checkpoint(checkpoint)
     meta = ckpt.meta.model_dump()
+    for name, got, want in (("role", meta["role"], expect_role), ("catalog_hash", meta["catalog_hash"], expect_catalog_hash),
+                            ("observation_schema_hash", meta["observation_schema_hash"], expect_obs_hash)):
+        if want is not None and got != want:
+            raise IncompatibleCheckpointError(f"{checkpoint} {name}: has {got!r}, expected {want!r}")
+    out = Path(out)
+    tmp = out.with_name(out.name + ".tmp")
     ppo = build_ppo(ckpt, PPOConfig(), restore=False)
     wrapper = _ExportWrapper(ppo.policy.eval(), meta["normalizer"]).eval()
     shapes = expected_shapes(meta, 2)
@@ -129,18 +167,22 @@ def export_onnx(checkpoint: str | Path, out: str | Path) -> dict:
     dummy[1][:, :3] = True  # a few valid nodes
     dummy[5][:, 0] = True
     names = ["node_features", "node_mask", "adjacency", "history", "globals", "action_mask"]
-    torch.onnx.export(wrapper, dummy, str(out), input_names=names, output_names=["logits", "value"],
+    torch.onnx.export(wrapper, dummy, str(tmp), input_names=names, output_names=["logits", "value"],
                       dynamic_axes={n: {0: "batch"} for n in names + ["logits", "value"]} | {"history": {0: "batch", 1: "hist_len"}},
                       opset_version=17, dynamo=False)
-    export_meta = {k: meta[k] for k in ("checkpoint_id", "role", "catalog_hash", "observation_schema_hash", "max_nodes",
+    export_meta = {"export_format": EXPORT_FORMAT} | {k: meta[k] for k in ("checkpoint_id", "role", "catalog_hash", "observation_schema_hash", "max_nodes",
                                          "policy_config", "normalizer", "policy_version", "training_steps")}
     export_meta["exporter"] = {"torch": torch.__version__, "onnx": onnx.__version__, "opset": 17}
-    model = onnx.load(str(out))
+    model = onnx.load(str(tmp))
     del model.metadata_props[:]
     entry = model.metadata_props.add()
     entry.key, entry.value = "hospital_rl", json.dumps(export_meta)
-    onnx.save(model, str(out))
-    Path(str(out) + ".meta.json").write_text(json.dumps(export_meta, indent=2))
+    onnx.save(model, str(tmp))
+    meta_path = Path(str(out) + ".meta.json")
+    meta_tmp = meta_path.with_name(meta_path.name + ".tmp")
+    meta_tmp.write_text(json.dumps(export_meta, indent=2))
+    os.replace(tmp, out)
+    os.replace(meta_tmp, meta_path)
     return export_meta
 
 
@@ -148,7 +190,7 @@ class OnnxRuntimeBackend(InferenceBackend):
     name = "onnxruntime"
 
     def __init__(self, path: str | Path, expected_catalog_hash: str | None = None,
-                 expected_obs_hash: str | None = None, threads: int = 1):
+                 expected_obs_hash: str | None = None, threads: int = 1, expected_role: str | None = None):
         import onnxruntime as ort
 
         opts = ort.SessionOptions()
@@ -157,11 +199,7 @@ class OnnxRuntimeBackend(InferenceBackend):
         props = self.sess.get_modelmeta().custom_metadata_map
         if "hospital_rl" not in props:
             raise IncompatibleCheckpointError(f"{path} has no hospital_rl metadata; refusing to run an unidentified model")
-        self.meta = json.loads(props["hospital_rl"])
-        for name, got, want in (("catalog_hash", self.meta["catalog_hash"], expected_catalog_hash),
-                                ("observation_schema_hash", self.meta["observation_schema_hash"], expected_obs_hash)):
-            if want is not None and got != want:
-                raise IncompatibleCheckpointError(f"onnx model {name}: model has {got!r}, expected {want!r}")
+        self.meta = check_meta(json.loads(props["hospital_rl"]), path, expected_role, expected_catalog_hash, expected_obs_hash)
 
     def run(self, batch, state=None):
         validate_batch(batch, self.meta, state)
@@ -187,13 +225,9 @@ class NativeBackend(InferenceBackend):
     name = "cpp"
 
     def __init__(self, path: str | Path, expected_catalog_hash: str | None = None,
-                 expected_obs_hash: str | None = None, threads: int = 1):
+                 expected_obs_hash: str | None = None, threads: int = 1, expected_role: str | None = None):
         self.runner = import_native().PolicyRunner(str(path), threads)
-        self.meta = json.loads(self.runner.metadata_json())
-        for name, got, want in (("catalog_hash", self.meta["catalog_hash"], expected_catalog_hash),
-                                ("observation_schema_hash", self.meta["observation_schema_hash"], expected_obs_hash)):
-            if want is not None and got != want:
-                raise IncompatibleCheckpointError(f"onnx model {name}: model has {got!r}, expected {want!r}")
+        self.meta = check_meta(json.loads(self.runner.metadata_json()), path, expected_role, expected_catalog_hash, expected_obs_hash)
 
     def run(self, batch, state=None):
         validate_batch(batch, self.meta, state)
