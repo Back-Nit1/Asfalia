@@ -1,45 +1,52 @@
-"""Modal backend (first mode: one bounded job = vectorized envs + learner together).
+"""Modal backend: the common lifecycle (``lifecycle.GatewayBackend``) over a Modal gateway.
 
-SDK API verified against modal 1.6.2 (installed signatures + docs): ``modal.App``, ``App.function(image,
-volumes, secrets, cpu, memory[MiB], timeout, retries, max_containers)``, ``Function.spawn`` ->
-``FunctionCall`` (``.get(timeout)``, ``.cancel(terminate_containers)``, ``FunctionCall.from_id``),
-``Volume.from_name(create_if_missing)``, ``Volume.commit()/reload()``, ``Volume.batch_upload``,
-``App.run()``. Everything Modal-specific lives in ``ModalGateway``; ``ModalBackend`` holds
-the logic (cap enforcement, idempotent submit, state mapping) and is tested with a fake gateway.
-The real gateway is only exercised by an explicit, tiny, credentialed smoke run (see docs).
+SDK surface verified against modal 1.6.2 (installed signatures) and the Modal docs: ``modal.App``,
+``App.function(image, volumes, secrets, cpu, memory[MiB], timeout, retries, max_containers)``, ``App.run`` /
+``App.deploy``, ``Function.from_name(app, name).spawn`` -> ``FunctionCall`` (``.get(timeout)``, ``.cancel(
+terminate_containers)``, ``FunctionCall.from_id``; results readable for 7 days), ``Volume.from_name(create_if_missing)``,
+``Volume.commit()/reload()/batch_upload/read_file/listdir/remove_file``, ``Image.add_local_dir/
+add_local_python_source/env``. Everything Modal-specific is in ``RealModalGateway`` and ``modal_functions``; the
+backend is tested with a fake gateway and the real gateway only by an explicit, tiny, credentialed smoke run.
 
-Auth: the Modal client reads MODAL_TOKEN_ID / MODAL_TOKEN_SECRET or ~/.modal.toml. This module never
-reads their values.
+Two lifecycles (``ModalConfig.mode``):
+  ephemeral (default, live-verified): the controller holds ``app.run()``; the app and its containers stop when the
+      controller calls ``close()`` or the last owned call ends. A *restarted* controller can still poll finished
+      calls (``FunctionCall.from_id``), but cannot vouch for a call whose app it does not own: such a call is
+      reported FAILED("lost") with its last durable checkpoint so a new attempt can resume. Not live-verified:
+      what Modal does to the containers when the owning client dies abruptly.
+  deployed (NOT live-verified): ``deploy()`` publishes the app once; ``Function.from_name`` spawns survive the
+      controller, and any restarted controller re-attaches via the registry's call ids.
+
+Auth: the Modal client reads MODAL_TOKEN_ID / MODAL_TOKEN_SECRET or ~/.modal.toml. This module never reads values.
 """
 from __future__ import annotations
 
 import contextlib
 import io
+import os
 from pathlib import Path
-from typing import Protocol
 
 from pydantic import BaseModel
 
-from hospital_rl.infra.backend import JobBackend, JobSpec, JobState, JobStatus
-from hospital_rl.infra.job import STATE_BY_REASON, control_path, run_job
+from hospital_rl.infra.backend import JobSpec
+from hospital_rl.infra.bundle import repo_root
+from hospital_rl.infra.job import control_path
+from hospital_rl.infra.lifecycle import GatewayBackend, Registry, ResourceCaps
 
 VOLUME_MOUNT = "/runs"
-
-
-class ResourceCaps(BaseModel):
-    cpu: float = 1.0
-    memory_mb: int = 2048
-    timeout_s: int = 600
-    max_containers: int = 1
-    max_retries: int = 0
-    max_steps: int = 100_000
+REMOTE_ROOT = "/root"  # add_local_python_source puts hospital_rl here; configs/ is copied next to it
+CFG_ENV = "HOSPITAL_RL_MODAL_CFG"
+DEPS = ["numpy", "networkx", "gymnasium", "pettingzoo", "pydantic>=2", "pyyaml"]
+TORCH_CPU = "https://download.pytorch.org/whl/cpu"  # default linux torch wheel drags in ~3GB of CUDA
+FUNCTION = "train_job"
 
 
 class ModalConfig(BaseModel):
     app_name: str = "hospital-rl-train"
     volume_name: str = "hospital-rl-runs"
     secret_names: list[str] = []  # Modal Secret objects mounted into the job; none needed for training itself
-    extra_modules: list[str] = []  # extra local python modules to ship (e.g. a toy env for smoke runs)
+    mode: str = "ephemeral"  # "ephemeral" | "deployed"
+    registry_dir: str = "runs/.registry/modal"
     caps: ResourceCaps = ResourceCaps()
 
 
@@ -48,142 +55,106 @@ def load_modal_config(path: str | Path) -> ModalConfig:
 
     raw = yaml.safe_load(Path(path).read_text())
     caps = {**raw.get("caps", {}), "max_steps": raw.get("train", {}).get("total_steps", ResourceCaps().max_steps)}
-    return ModalConfig(**{k: raw[k] for k in ("app_name", "volume_name", "secret_names", "extra_modules") if k in raw}, caps=caps)
+    return ModalConfig(**{k: raw[k] for k in ("app_name", "volume_name", "secret_names", "mode", "registry_dir") if k in raw}, caps=caps)
 
 
-class ModalGateway(Protocol):
-    def spawn(self, spec_json: str) -> str: ...
+def build_image(cfg: ModalConfig):
+    """Clean-container image: CPU torch + runtime deps + the hospital_rl package + configs. Nothing from tests/."""
+    import modal
 
-    def poll(self, call_id: str) -> tuple[str, dict | str]:
-        """("running", {}) | ("done", result dict) | ("timed_out", msg) | ("failed", msg)"""
-
-    def cancel(self, call_id: str) -> None: ...
-
-    def write_control(self, run_id: str, attempt_id: str, word: str) -> None: ...
+    return (modal.Image.debian_slim(python_version="3.13").pip_install("torch", index_url=TORCH_CPU).pip_install(*DEPS)
+            .env({CFG_ENV: cfg.model_dump_json()})
+            .add_local_dir(repo_root() / "configs", f"{REMOTE_ROOT}/configs")
+            .add_local_python_source("hospital_rl"))
 
 
-class ModalBackend(JobBackend):
-    name = "modal"
-
-    def __init__(self, cfg: ModalConfig, gateway: ModalGateway):
-        self.cfg, self.gw = cfg, gateway
-        self._calls: dict[str, str] = {}  # job_id -> call id
-        self._specs: dict[str, JobSpec] = {}
-        self._cancelled: set[str] = set()
-
-    def check_caps(self, spec: JobSpec) -> None:
-        c, steps = self.cfg.caps, spec.train_config.get("total_steps", 0)
-        over = [f"{n}={v} > cap {cap}" for n, v, cap in (
-            ("timeout_s", spec.timeout_s, c.timeout_s), ("cpu", spec.cpu, c.cpu),
-            ("memory_mb", spec.memory_mb, c.memory_mb), ("max_containers", spec.max_containers, c.max_containers),
-            ("max_retries", spec.max_retries, c.max_retries), ("total_steps", steps, c.max_steps)) if v > cap]
-        if over:
-            raise ValueError("job exceeds configured resource caps: " + "; ".join(over))
-
-    def submit(self, spec: JobSpec) -> str:
-        job_id = f"modal:{spec.run_id}:{spec.attempt_id}"
-        if job_id in self._calls:
-            return job_id  # idempotent: never launch the same attempt twice
-        self.check_caps(spec)
-        self._calls[job_id] = self.gw.spawn(spec.model_dump_json())
-        self._specs[job_id] = spec
-        return job_id
-
-    def status(self, job_id: str) -> JobStatus:
-        if job_id in self._cancelled:
-            return JobStatus(job_id=job_id, state=JobState.CANCELLED, detail="force-cancelled; work since last checkpoint lost")
-        kind, payload = self.gw.poll(self._calls[job_id])
-        if kind == "running":
-            return JobStatus(job_id=job_id, state=JobState.RUNNING)
-        if kind == "done":
-            return JobStatus(job_id=job_id, state=JobState(payload["state"]), result=payload)
-        return JobStatus(job_id=job_id, state=JobState.TIMED_OUT if kind == "timed_out" else JobState.FAILED, detail=str(payload))
-
-    def _control(self, job_id: str, word: str) -> None:
-        s = self._specs[job_id]
-        self.gw.write_control(s.run_id, s.attempt_id, word)
-
-    def drain(self, job_id: str) -> None:
-        self._control(job_id, "drain")
-
-    def checkpoint_and_stop(self, job_id: str) -> None:
-        self._control(job_id, "stop")
-
-    def force_cancel(self, job_id: str) -> None:
-        self._cancelled.add(job_id)
-        self.gw.cancel(self._calls[job_id])
+class ModalBackend(GatewayBackend):
+    def __init__(self, cfg: ModalConfig, gateway, registry: Registry | str | Path | None = None):
+        reg = registry if isinstance(registry, Registry) else Registry(registry or cfg.registry_dir)
+        super().__init__("modal", gateway, reg, cfg.caps)
+        self.cfg = cfg
 
 
 class RealModalGateway:
     """Thin wrapper over the Modal SDK. Importing it requires the ``modal`` package."""
 
     def __init__(self, cfg: ModalConfig):
+        import importlib
+
         import modal
 
         self.modal, self.cfg = modal, cfg
-        self._stacks: dict[str, contextlib.ExitStack] = {}
-        c = cfg.caps
-        self.app = modal.App(cfg.app_name)
-        self.vol = modal.Volume.from_name(cfg.volume_name, create_if_missing=True)
-        image = (modal.Image.debian_slim(python_version="3.13")
-                 .pip_install("torch", "gymnasium", "numpy", "pydantic", "pyyaml")
-                 .add_local_python_source("hospital_rl", *cfg.extra_modules))
-        vol = self.vol
+        os.environ[CFG_ENV] = cfg.model_dump_json()  # modal_functions defines its app at import, from this config
+        self.fns = importlib.import_module("hospital_rl.infra.modal_functions")
+        if self.fns.cfg != cfg:
+            raise RuntimeError("modal_functions was already imported with a different ModalConfig in this process")
+        self.vol, self._stack, self._owned = self.fns.vol, None, set()
 
-        @self.app.function(image=image, volumes={VOLUME_MOUNT: vol}, secrets=[modal.Secret.from_name(n) for n in cfg.secret_names],
-                           serialized=True,  # built inside a function from config caps; Modal requires global scope otherwise
-                           cpu=c.cpu, memory=c.memory_mb, timeout=c.timeout_s, max_containers=c.max_containers,
-                           retries=modal.Retries(max_retries=c.max_retries, initial_delay=1.0) if c.max_retries else None)
-        def train_job(spec_json: str) -> dict:
-            from hospital_rl.training.train import control_from_file
+    def deploy(self) -> None:
+        with self.modal.enable_output():
+            self.fns.app.deploy(name=self.cfg.app_name)
 
-            spec = JobSpec.model_validate_json(spec_json)
-            file_ctl = control_from_file(control_path(VOLUME_MOUNT, spec.run_id, spec.attempt_id))
-
-            def control():
-                vol.reload()  # see control files written by the client since our last look
-                return file_ctl()
-
-            return run_job(spec, VOLUME_MOUNT, control=control, after_save=lambda p: vol.commit())
-
-        self.fn = train_job
-
-    def spawn(self, spec_json: str) -> str:
-        # Not detached: detached apps keep their container alive after the function returns (observed in a
-        # real smoke run). The app lives as long as this client holds the run context and is stopped
-        # (containers terminated) when the call ends, is cancelled, or close() is called. Consequence: the
-        # client process must stay up for the job's duration; durable state lives on the Volume.
-        stack = contextlib.ExitStack()
-        stack.enter_context(self.app.run())
-        call_id = self.fn.spawn(spec_json).object_id
-        self._stacks[call_id] = stack
+    def spawn(self, spec: JobSpec) -> str:
+        if self.cfg.mode == "deployed":
+            fn = self.modal.Function.from_name(self.cfg.app_name, FUNCTION)
+        else:
+            if self._stack is None:
+                self._stack = contextlib.ExitStack()
+                self._stack.enter_context(self.fns.app.run())
+            fn = self.fns.train_job
+        call_id = fn.spawn(spec.model_dump_json()).object_id
+        self._owned.add(call_id)
         return call_id
 
-    def _release(self, call_id: str) -> None:
-        if stack := self._stacks.pop(call_id, None):
-            stack.close()
-
     def close(self) -> None:
-        for call_id in list(self._stacks):
-            self._release(call_id)
+        """Stop the ephemeral app (terminating its containers). A deployed app is not affected."""
+        if self._stack is not None:
+            self._stack.close()
+            self._stack = None
+
+    def _finished(self, call_id: str) -> None:
+        self._owned.discard(call_id)
+        if not self._owned:
+            self.close()  # a lingering non-detached app keeps containers alive (observed live); stop it with the last call
 
     def poll(self, call_id):
         m = self.modal
         try:
             out = "done", m.FunctionCall.from_id(call_id).get(timeout=0)
         except (TimeoutError, m.exception.TimeoutError):
+            if self.cfg.mode == "ephemeral" and call_id not in self._owned:
+                return "lost", ("owning controller is gone; ephemeral Modal app state cannot be verified from here "
+                                "(see last durable checkpoint, cancel, then resume with a new attempt)")
             return "running", {}
         except m.exception.FunctionTimeoutError as e:
             out = "timed_out", str(e)
-        except Exception as e:  # noqa: BLE001 - surface any remote failure as FAILED with its message
+        except m.exception.OutputExpiredError:
+            out = "failed", "call output expired (Modal keeps results 7 days); read result.json/manifest from the Volume"
+        except Exception as e:  # noqa: BLE001 - quota, startup, preemption, remote exceptions: surface as FAILED with the message
             out = "failed", f"{type(e).__name__}: {e}"
-        self._release(call_id)
+        self._finished(call_id)
         return out
 
     def cancel(self, call_id):
         self.modal.FunctionCall.from_id(call_id).cancel(terminate_containers=True)
-        self._release(call_id)
+        self._finished(call_id)
 
     def write_control(self, run_id, attempt_id, word):
         with self.vol.batch_upload(force=True) as up:
             up.put_file(io.BytesIO(word.encode()), "/" + str(control_path("", run_id, attempt_id)).lstrip("/"))
+
+    def read_file(self, run_id, attempt_id, name):
+        try:
+            return b"".join(self.vol.read_file(f"/{run_id}/{attempt_id}/{name}"))
+        except self.modal.exception.NotFoundError:
+            return None
+
+    def list_attempts(self):
+        last = lambda e: e.path.strip("/").split("/")[-1]  # noqa: E731
+        return [(last(r), last(a)) for r in self.vol.listdir("/") if last(r) != "control"
+                for a in self.vol.listdir(r.path) if a.type.name == "DIRECTORY" and last(a) != "control"]
+
+    def delete_attempt(self, run_id, attempt_id):
+        self.vol.remove_file(f"/{run_id}/{attempt_id}", recursive=True)
+        with contextlib.suppress(self.modal.exception.NotFoundError):
+            self.vol.remove_file(f"/{control_path('', run_id, attempt_id)}")
