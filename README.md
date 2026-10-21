@@ -240,9 +240,10 @@ detection evaluation only and are never presented as validation of remediation e
 | Scenario generator (4 topology families, 8–40+ nodes) and splits | implemented |
 | Trajectory JSONL export, fixed-intent / adaptive counterfactuals, replay | implemented, smoke-tested |
 | Scripted baselines and baseline benchmark | implemented; one scripted attacker, uncalibrated |
-| PPO training, checkpoints, league, Modal/Daytona, ONNX/C++ | in progress on `agent/training-infra` |
-| Dashboard, API, orchestrator | in progress on `agent/dashboard-orchestration` |
-| Learned-policy experiments | **none run** |
+| Masked PPO, atomic checkpoints, league, local + Modal backends, ONNX export (merged from agent B) | implemented; unit-tested; one tiny live Modal smoke; Daytona deferred; native build verified on macOS arm64 only |
+| School training driver (`hospital-rl train`), Stage D `evaluate` | implemented, smoke-run only |
+| Dashboard, API, orchestrator (merged from agent A) | running locally: `python -m hospital_rl.api --port 8000 --episodes-dir runs/episodes`; replays real recorded episodes; live training view not wired |
+| Learned-policy experiments | **none succeeded.** A 60k-step attacker school run learned nothing (0% validation success; scripted attacker gets 90% at level 0). Defender school run finished but is not yet compared to baselines. No transfer result exists |
 | Synthetic clinical-database testbed | design outline only |
 
 ## 7. Setup and commands
@@ -254,6 +255,10 @@ uv run hospital-rl replay --episode runs/demo/episode.json
 uv run hospital-rl counterfactual --episode runs/demo/episode.json --mode fixed-intent   # or --mode adaptive
 uv run hospital-rl benchmark --split validation --episodes 20 --size 12 [--tie-sensitivity]
 uv run python scripts/make_figures.py                                # regenerate docs/img figures
+cd frontend && npm install && npm run build && cd ..                 # build the dashboard UI
+uv run python -m hospital_rl.api --port 8000 --episodes-dir runs/episodes --no-agent   # http://127.0.0.1:8000
+uv run hospital-rl train --role defender --config configs/defender_school.yaml --steps 60000 --out runs/defender
+uv run hospital-rl evaluate --attacker-checkpoint runs/attacker/best.pt --defender-checkpoint runs/defender/best.pt --split validation
 ```
 Other CLI subcommands are stubs and print "not implemented yet".
 

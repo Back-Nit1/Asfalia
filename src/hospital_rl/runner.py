@@ -30,7 +30,9 @@ def run_episode(spec: ScenarioSpec, seed: int, attacker, defender, record: bool 
                       "events": info["events"], "reward": info["reward"], "components": info["components"]})
         if info["done"]:
             break
-    out = {"scenario": spec.name, "spec": spec.model_dump(mode="json"), "scenario_hash": spec.hash(), "catalog_hash": catalog_hash(), "seed": seed,
+    out = {"scenario": spec.name, "spec": spec.model_dump(mode="json"),
+           "topology": {"nodes": [{"id": n.id, "asset_type": n.asset_type, "zone": n.zone} for n in spec.nodes],
+                        "edges": [{"src": e.src, "dst": e.dst, "kind": e.kind} for e in spec.edges]}, "scenario_hash": spec.hash(), "catalog_hash": catalog_hash(), "seed": seed,
             "tie_policy": spec.tie_policy, "return": total, "metrics": summarize(w), "steps": steps}
     if record:
         out["rows"], out["privileged"] = rows, w.truth
