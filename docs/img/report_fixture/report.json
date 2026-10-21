@@ -1,0 +1,1748 @@
+{
+ "adaptation_arms": {
+  "pretrained": {
+   "budget": {
+    "adapt_env_steps": 128,
+    "pretrain_env_steps": 128,
+    "requested_adapt_steps": 128,
+    "total_env_steps": 256
+   },
+   "metrics": {
+    "critical_success": {
+     "ci95": [
+      -0.5938167067307691,
+      2.3612445913461535
+     ],
+     "max": 1.0,
+     "mean": 0.8837139423076923,
+     "min": 0.7674278846153846,
+     "n": 2,
+     "per_seed": {
+      "1": 1.0,
+      "2": 0.7674278846153846
+     },
+     "std": 0.16445331990336173
+    },
+    "score": {
+     "ci95": [
+      -6.853,
+      5.853
+     ],
+     "max": -0.0,
+     "mean": -0.5,
+     "min": -1.0,
+     "n": 2,
+     "per_seed": {
+      "1": -0.0,
+      "2": -1.0
+     },
+     "std": 0.7071067811865476
+    },
+    "spend": {
+     "ci95": [
+      21.437375000000003,
+      48.437625
+     ],
+     "max": 36.0,
+     "mean": 34.9375,
+     "min": 33.875,
+     "n": 2,
+     "per_seed": {
+      "1": 33.875,
+      "2": 36.0
+     },
+     "std": 1.5026019100214134
+    },
+    "success": {
+     "ci95": [
+      -5.853,
+      6.853
+     ],
+     "max": 1.0,
+     "mean": 0.5,
+     "min": 0.0,
+     "n": 2,
+     "per_seed": {
+      "1": 1.0,
+      "2": 0.0
+     },
+     "std": 0.7071067811865476
+    },
+    "weighted_exposure_frac": {
+     "ci95": [
+      0.0,
+      0.0
+     ],
+     "max": 0.0,
+     "mean": 0.0,
+     "min": 0.0,
+     "n": 2,
+     "per_seed": {
+      "1": 0.0,
+      "2": 0.0
+     },
+     "std": 0.0
+    }
+   },
+   "missing_seeds": [],
+   "seeds": [
+    1,
+    2
+   ]
+  },
+  "scratch_equal_total": {
+   "budget": {
+    "adapt_env_steps": 256,
+    "pretrain_env_steps": 0,
+    "requested_adapt_steps": 256,
+    "total_env_steps": 256
+   },
+   "metrics": {
+    "critical_success": {
+     "ci95": [
+      -0.6465320913461536,
+      2.4062676682692308
+     ],
+     "max": 1.0,
+     "mean": 0.8798677884615385,
+     "min": 0.7597355769230769,
+     "n": 2,
+     "per_seed": {
+      "1": 1.0,
+      "2": 0.7597355769230769
+     },
+     "std": 0.16989260283556593
+    },
+    "score": {
+     "ci95": [
+      -6.853,
+      5.853
+     ],
+     "max": -0.0,
+     "mean": -0.5,
+     "min": -1.0,
+     "n": 2,
+     "per_seed": {
+      "1": -0.0,
+      "2": -1.0
+     },
+     "std": 0.7071067811865476
+    },
+    "spend": {
+     "ci95": [
+      6.874750000000002,
+      60.875249999999994
+     ],
+     "max": 36.0,
+     "mean": 33.875,
+     "min": 31.75,
+     "n": 2,
+     "per_seed": {
+      "1": 31.75,
+      "2": 36.0
+     },
+     "std": 3.005203820042827
+    },
+    "success": {
+     "ci95": [
+      -5.853,
+      6.853
+     ],
+     "max": 1.0,
+     "mean": 0.5,
+     "min": 0.0,
+     "n": 2,
+     "per_seed": {
+      "1": 1.0,
+      "2": 0.0
+     },
+     "std": 0.7071067811865476
+    },
+    "weighted_exposure_frac": {
+     "ci95": [
+      0.0,
+      0.0
+     ],
+     "max": 0.0,
+     "mean": 0.0,
+     "min": 0.0,
+     "n": 2,
+     "per_seed": {
+      "1": 0.0,
+      "2": 0.0
+     },
+     "std": 0.0
+    }
+   },
+   "missing_seeds": [],
+   "seeds": [
+    1,
+    2
+   ]
+  },
+  "scratch_same_adapt": {
+   "budget": {
+    "adapt_env_steps": 128,
+    "pretrain_env_steps": 0,
+    "requested_adapt_steps": 128,
+    "total_env_steps": 128
+   },
+   "metrics": {
+    "critical_success": {
+     "ci95": [
+      -0.647355769230769,
+      2.4069711538461536
+     ],
+     "max": 1.0,
+     "mean": 0.8798076923076923,
+     "min": 0.7596153846153846,
+     "n": 2,
+     "per_seed": {
+      "1": 1.0,
+      "2": 0.7596153846153846
+     },
+     "std": 0.16997759163138162
+    },
+    "score": {
+     "ci95": [
+      -6.853,
+      5.853
+     ],
+     "max": -0.0,
+     "mean": -0.5,
+     "min": -1.0,
+     "n": 2,
+     "per_seed": {
+      "1": -0.0,
+      "2": -1.0
+     },
+     "std": 0.7071067811865476
+    },
+    "spend": {
+     "ci95": [
+      21.437375000000003,
+      48.437625
+     ],
+     "max": 36.0,
+     "mean": 34.9375,
+     "min": 33.875,
+     "n": 2,
+     "per_seed": {
+      "1": 33.875,
+      "2": 36.0
+     },
+     "std": 1.5026019100214134
+    },
+    "success": {
+     "ci95": [
+      -5.853,
+      6.853
+     ],
+     "max": 1.0,
+     "mean": 0.5,
+     "min": 0.0,
+     "n": 2,
+     "per_seed": {
+      "1": 1.0,
+      "2": 0.0
+     },
+     "std": 0.7071067811865476
+    },
+    "weighted_exposure_frac": {
+     "ci95": [
+      0.0,
+      0.0
+     ],
+     "max": 0.0,
+     "mean": 0.0,
+     "min": 0.0,
+     "n": 2,
+     "per_seed": {
+      "1": 0.0,
+      "2": 0.0
+     },
+     "std": 0.0
+    }
+   },
+   "missing_seeds": [],
+   "seeds": [
+    1,
+    2
+   ]
+  }
+ },
+ "code_revision": "f44a68938e7e8725fdeb4a9bf3dd123697d831fa",
+ "compatibility": {
+  "checked": {
+   "arm:pretrained": {
+    "catalog_hash": "61d1810d111caf0f",
+    "league": false,
+    "split_hash": "40a031b1a42fa0e9",
+    "trainable_role": "defender",
+    "val_episodes": 2,
+    "world_hash": "eb5fd09a06240422"
+   },
+   "arm:scratch_equal_total": {
+    "catalog_hash": "61d1810d111caf0f",
+    "league": false,
+    "split_hash": "40a031b1a42fa0e9",
+    "trainable_role": "defender",
+    "val_episodes": 2,
+    "world_hash": "eb5fd09a06240422"
+   },
+   "arm:scratch_same_adapt": {
+    "catalog_hash": "61d1810d111caf0f",
+    "league": false,
+    "split_hash": "40a031b1a42fa0e9",
+    "trainable_role": "defender",
+    "val_episodes": 2,
+    "world_hash": "eb5fd09a06240422"
+   },
+   "name": "smoke",
+   "stage_d": {
+    "catalog_hash": "61d1810d111caf0f",
+    "episodes": 2,
+    "observation_schema_hash": {
+     "attacker": "e91b5533566e1b49",
+     "defender": "2fd2306204baddf4"
+    },
+    "split": "validation",
+    "split_hash": "40a031b1a42fa0e9",
+    "world_config_hash": "eb5fd09a06240422"
+   }
+  },
+  "ok": true
+ },
+ "evidence": "INSUFFICIENT: 2 seeds < 5; spread and CI are shown but are not a basis for claims",
+ "experiment": "smoke",
+ "inputs": {
+  "1": "e4d89c21719c7210",
+  "2": "93fa0de69df1491b"
+ },
+ "n_seeds": 2,
+ "notes": [
+  "Rewards are uncalibrated; scripted opponents and one synthetic world family set are all that is tested.",
+  "Arms were compared only where Agent C's budget-rule compare() accepted them (see rejected_comparisons).",
+  "Cross-play cells with a learned actor aggregate different per-seed checkpoints under one label."
+ ],
+ "rejected_comparisons": [],
+ "report_version": 1,
+ "seeds": [
+  1,
+  2
+ ],
+ "stage_d_after_adaptation": {
+  "cross_play": {
+   "critical_success": {
+    "cols": [
+     "GreedyDefender",
+     "Noop",
+     "StaticHardening",
+     "learned_defender"
+    ],
+    "rows": [
+     "ScriptedAttacker",
+     "learned_attacker"
+    ],
+    "values": [
+     [
+      0.6549879807692307,
+      1.0,
+      0.8992788461538461,
+      0.6268930288461538
+     ],
+     [
+      0.8307692307692307,
+      1.0,
+      0.8992788461538461,
+      0.6268930288461538
+     ]
+    ]
+   },
+   "spend": {
+    "cols": [
+     "GreedyDefender",
+     "Noop",
+     "StaticHardening",
+     "learned_defender"
+    ],
+    "rows": [
+     "ScriptedAttacker",
+     "learned_attacker"
+    ],
+    "values": [
+     [
+      24.450000000000006,
+      0.0,
+      36.0,
+      36.0
+     ],
+     [
+      19.1,
+      0.0,
+      36.0,
+      36.0
+     ]
+    ]
+   },
+   "weighted_exposure_frac": {
+    "cols": [
+     "GreedyDefender",
+     "Noop",
+     "StaticHardening",
+     "learned_defender"
+    ],
+    "rows": [
+     "ScriptedAttacker",
+     "learned_attacker"
+    ],
+    "values": [
+     [
+      0.0,
+      0.6371753246753247,
+      0.0,
+      0.16233766233766234
+     ],
+     [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ]
+    ]
+   }
+  },
+  "episodes_per_pair": 2,
+  "missing_seeds": [],
+  "pairs": {
+   "ScriptedAttacker x GreedyDefender": {
+    "availability_violation_rate": {
+     "ci95": [
+      1.0,
+      1.0
+     ],
+     "max": 1.0,
+     "mean": 1.0,
+     "min": 1.0,
+     "n": 2,
+     "per_seed": {
+      "1": 1.0,
+      "2": 1.0
+     },
+     "std": 0.0
+    },
+    "contained_rate": {
+     "ci95": [
+      0.0,
+      0.0
+     ],
+     "max": 0.0,
+     "mean": 0.0,
+     "min": 0.0,
+     "n": 2,
+     "per_seed": {
+      "1": 0.0,
+      "2": 0.0
+     },
+     "std": 0.0
+    },
+    "critical_success": {
+     "ci95": [
+      0.6549879807692307,
+      0.6549879807692307
+     ],
+     "max": 0.6549879807692307,
+     "mean": 0.6549879807692307,
+     "min": 0.6549879807692307,
+     "n": 2,
+     "per_seed": {
+      "1": 0.6549879807692307,
+      "2": 0.6549879807692307
+     },
+     "std": 0.0
+    },
+    "spend": {
+     "ci95": [
+      24.450000000000006,
+      24.450000000000006
+     ],
+     "max": 24.450000000000006,
+     "mean": 24.450000000000006,
+     "min": 24.450000000000006,
+     "n": 2,
+     "per_seed": {
+      "1": 24.450000000000006,
+      "2": 24.450000000000006
+     },
+     "std": 0.0
+    },
+    "weighted_exposure_frac": {
+     "ci95": [
+      0.0,
+      0.0
+     ],
+     "max": 0.0,
+     "mean": 0.0,
+     "min": 0.0,
+     "n": 2,
+     "per_seed": {
+      "1": 0.0,
+      "2": 0.0
+     },
+     "std": 0.0
+    }
+   },
+   "ScriptedAttacker x Noop": {
+    "availability_violation_rate": {
+     "ci95": [
+      0.0,
+      0.0
+     ],
+     "max": 0.0,
+     "mean": 0.0,
+     "min": 0.0,
+     "n": 2,
+     "per_seed": {
+      "1": 0.0,
+      "2": 0.0
+     },
+     "std": 0.0
+    },
+    "contained_rate": {
+     "ci95": [
+      0.0,
+      0.0
+     ],
+     "max": 0.0,
+     "mean": 0.0,
+     "min": 0.0,
+     "n": 2,
+     "per_seed": {
+      "1": 0.0,
+      "2": 0.0
+     },
+     "std": 0.0
+    },
+    "critical_success": {
+     "ci95": [
+      1.0,
+      1.0
+     ],
+     "max": 1.0,
+     "mean": 1.0,
+     "min": 1.0,
+     "n": 2,
+     "per_seed": {
+      "1": 1.0,
+      "2": 1.0
+     },
+     "std": 0.0
+    },
+    "spend": {
+     "ci95": [
+      0.0,
+      0.0
+     ],
+     "max": 0.0,
+     "mean": 0.0,
+     "min": 0.0,
+     "n": 2,
+     "per_seed": {
+      "1": 0.0,
+      "2": 0.0
+     },
+     "std": 0.0
+    },
+    "weighted_exposure_frac": {
+     "ci95": [
+      0.6371753246753247,
+      0.6371753246753247
+     ],
+     "max": 0.6371753246753247,
+     "mean": 0.6371753246753247,
+     "min": 0.6371753246753247,
+     "n": 2,
+     "per_seed": {
+      "1": 0.6371753246753247,
+      "2": 0.6371753246753247
+     },
+     "std": 0.0
+    }
+   },
+   "ScriptedAttacker x StaticHardening": {
+    "availability_violation_rate": {
+     "ci95": [
+      1.0,
+      1.0
+     ],
+     "max": 1.0,
+     "mean": 1.0,
+     "min": 1.0,
+     "n": 2,
+     "per_seed": {
+      "1": 1.0,
+      "2": 1.0
+     },
+     "std": 0.0
+    },
+    "contained_rate": {
+     "ci95": [
+      0.0,
+      0.0
+     ],
+     "max": 0.0,
+     "mean": 0.0,
+     "min": 0.0,
+     "n": 2,
+     "per_seed": {
+      "1": 0.0,
+      "2": 0.0
+     },
+     "std": 0.0
+    },
+    "critical_success": {
+     "ci95": [
+      0.8992788461538461,
+      0.8992788461538461
+     ],
+     "max": 0.8992788461538461,
+     "mean": 0.8992788461538461,
+     "min": 0.8992788461538461,
+     "n": 2,
+     "per_seed": {
+      "1": 0.8992788461538461,
+      "2": 0.8992788461538461
+     },
+     "std": 0.0
+    },
+    "spend": {
+     "ci95": [
+      36.0,
+      36.0
+     ],
+     "max": 36.0,
+     "mean": 36.0,
+     "min": 36.0,
+     "n": 2,
+     "per_seed": {
+      "1": 36.0,
+      "2": 36.0
+     },
+     "std": 0.0
+    },
+    "weighted_exposure_frac": {
+     "ci95": [
+      0.0,
+      0.0
+     ],
+     "max": 0.0,
+     "mean": 0.0,
+     "min": 0.0,
+     "n": 2,
+     "per_seed": {
+      "1": 0.0,
+      "2": 0.0
+     },
+     "std": 0.0
+    }
+   },
+   "ScriptedAttacker x learned_defender": {
+    "availability_violation_rate": {
+     "ci95": [
+      1.0,
+      1.0
+     ],
+     "max": 1.0,
+     "mean": 1.0,
+     "min": 1.0,
+     "n": 2,
+     "per_seed": {
+      "1": 1.0,
+      "2": 1.0
+     },
+     "std": 0.0
+    },
+    "contained_rate": {
+     "ci95": [
+      0.0,
+      0.0
+     ],
+     "max": 0.0,
+     "mean": 0.0,
+     "min": 0.0,
+     "n": 2,
+     "per_seed": {
+      "1": 0.0,
+      "2": 0.0
+     },
+     "std": 0.0
+    },
+    "critical_success": {
+     "ci95": [
+      -0.44173960336538487,
+      1.6955256610576925
+     ],
+     "max": 0.7109975961538462,
+     "mean": 0.6268930288461538,
+     "min": 0.5427884615384615,
+     "n": 2,
+     "per_seed": {
+      "1": 0.7109975961538462,
+      "2": 0.5427884615384615
+     },
+     "std": 0.11894181974405933
+    },
+    "spend": {
+     "ci95": [
+      35.999999999999936,
+      36.000000000000064
+     ],
+     "max": 36.00000000000001,
+     "mean": 36.0,
+     "min": 36.0,
+     "n": 2,
+     "per_seed": {
+      "1": 36.00000000000001,
+      "2": 36.0
+     },
+     "std": 7.105427357601002e-15
+    },
+    "weighted_exposure_frac": {
+     "ci95": [
+      -1.9003246753246748,
+      2.2249999999999996
+     ],
+     "max": 0.3246753246753247,
+     "mean": 0.16233766233766234,
+     "min": 0.0,
+     "n": 2,
+     "per_seed": {
+      "1": 0.3246753246753247,
+      "2": 0.0
+     },
+     "std": 0.22958012376186607
+    }
+   },
+   "learned_attacker x GreedyDefender": {
+    "availability_violation_rate": {
+     "ci95": [
+      0.5,
+      0.5
+     ],
+     "max": 0.5,
+     "mean": 0.5,
+     "min": 0.5,
+     "n": 2,
+     "per_seed": {
+      "1": 0.5,
+      "2": 0.5
+     },
+     "std": 0.0
+    },
+    "contained_rate": {
+     "ci95": [
+      0.0,
+      0.0
+     ],
+     "max": 0.0,
+     "mean": 0.0,
+     "min": 0.0,
+     "n": 2,
+     "per_seed": {
+      "1": 0.0,
+      "2": 0.0
+     },
+     "std": 0.0
+    },
+    "critical_success": {
+     "ci95": [
+      0.8307692307692307,
+      0.8307692307692307
+     ],
+     "max": 0.8307692307692307,
+     "mean": 0.8307692307692307,
+     "min": 0.8307692307692307,
+     "n": 2,
+     "per_seed": {
+      "1": 0.8307692307692307,
+      "2": 0.8307692307692307
+     },
+     "std": 0.0
+    },
+    "spend": {
+     "ci95": [
+      19.1,
+      19.1
+     ],
+     "max": 19.1,
+     "mean": 19.1,
+     "min": 19.1,
+     "n": 2,
+     "per_seed": {
+      "1": 19.1,
+      "2": 19.1
+     },
+     "std": 0.0
+    },
+    "weighted_exposure_frac": {
+     "ci95": [
+      0.0,
+      0.0
+     ],
+     "max": 0.0,
+     "mean": 0.0,
+     "min": 0.0,
+     "n": 2,
+     "per_seed": {
+      "1": 0.0,
+      "2": 0.0
+     },
+     "std": 0.0
+    }
+   },
+   "learned_attacker x Noop": {
+    "availability_violation_rate": {
+     "ci95": [
+      0.0,
+      0.0
+     ],
+     "max": 0.0,
+     "mean": 0.0,
+     "min": 0.0,
+     "n": 2,
+     "per_seed": {
+      "1": 0.0,
+      "2": 0.0
+     },
+     "std": 0.0
+    },
+    "contained_rate": {
+     "ci95": [
+      0.0,
+      0.0
+     ],
+     "max": 0.0,
+     "mean": 0.0,
+     "min": 0.0,
+     "n": 2,
+     "per_seed": {
+      "1": 0.0,
+      "2": 0.0
+     },
+     "std": 0.0
+    },
+    "critical_success": {
+     "ci95": [
+      1.0,
+      1.0
+     ],
+     "max": 1.0,
+     "mean": 1.0,
+     "min": 1.0,
+     "n": 2,
+     "per_seed": {
+      "1": 1.0,
+      "2": 1.0
+     },
+     "std": 0.0
+    },
+    "spend": {
+     "ci95": [
+      0.0,
+      0.0
+     ],
+     "max": 0.0,
+     "mean": 0.0,
+     "min": 0.0,
+     "n": 2,
+     "per_seed": {
+      "1": 0.0,
+      "2": 0.0
+     },
+     "std": 0.0
+    },
+    "weighted_exposure_frac": {
+     "ci95": [
+      0.0,
+      0.0
+     ],
+     "max": 0.0,
+     "mean": 0.0,
+     "min": 0.0,
+     "n": 2,
+     "per_seed": {
+      "1": 0.0,
+      "2": 0.0
+     },
+     "std": 0.0
+    }
+   },
+   "learned_attacker x StaticHardening": {
+    "availability_violation_rate": {
+     "ci95": [
+      1.0,
+      1.0
+     ],
+     "max": 1.0,
+     "mean": 1.0,
+     "min": 1.0,
+     "n": 2,
+     "per_seed": {
+      "1": 1.0,
+      "2": 1.0
+     },
+     "std": 0.0
+    },
+    "contained_rate": {
+     "ci95": [
+      0.0,
+      0.0
+     ],
+     "max": 0.0,
+     "mean": 0.0,
+     "min": 0.0,
+     "n": 2,
+     "per_seed": {
+      "1": 0.0,
+      "2": 0.0
+     },
+     "std": 0.0
+    },
+    "critical_success": {
+     "ci95": [
+      0.8992788461538461,
+      0.8992788461538461
+     ],
+     "max": 0.8992788461538461,
+     "mean": 0.8992788461538461,
+     "min": 0.8992788461538461,
+     "n": 2,
+     "per_seed": {
+      "1": 0.8992788461538461,
+      "2": 0.8992788461538461
+     },
+     "std": 0.0
+    },
+    "spend": {
+     "ci95": [
+      36.0,
+      36.0
+     ],
+     "max": 36.0,
+     "mean": 36.0,
+     "min": 36.0,
+     "n": 2,
+     "per_seed": {
+      "1": 36.0,
+      "2": 36.0
+     },
+     "std": 0.0
+    },
+    "weighted_exposure_frac": {
+     "ci95": [
+      0.0,
+      0.0
+     ],
+     "max": 0.0,
+     "mean": 0.0,
+     "min": 0.0,
+     "n": 2,
+     "per_seed": {
+      "1": 0.0,
+      "2": 0.0
+     },
+     "std": 0.0
+    }
+   },
+   "learned_attacker x learned_defender": {
+    "availability_violation_rate": {
+     "ci95": [
+      1.0,
+      1.0
+     ],
+     "max": 1.0,
+     "mean": 1.0,
+     "min": 1.0,
+     "n": 2,
+     "per_seed": {
+      "1": 1.0,
+      "2": 1.0
+     },
+     "std": 0.0
+    },
+    "contained_rate": {
+     "ci95": [
+      0.0,
+      0.0
+     ],
+     "max": 0.0,
+     "mean": 0.0,
+     "min": 0.0,
+     "n": 2,
+     "per_seed": {
+      "1": 0.0,
+      "2": 0.0
+     },
+     "std": 0.0
+    },
+    "critical_success": {
+     "ci95": [
+      -0.44173960336538487,
+      1.6955256610576925
+     ],
+     "max": 0.7109975961538462,
+     "mean": 0.6268930288461538,
+     "min": 0.5427884615384615,
+     "n": 2,
+     "per_seed": {
+      "1": 0.7109975961538462,
+      "2": 0.5427884615384615
+     },
+     "std": 0.11894181974405933
+    },
+    "spend": {
+     "ci95": [
+      35.999999999999936,
+      36.000000000000064
+     ],
+     "max": 36.00000000000001,
+     "mean": 36.0,
+     "min": 36.0,
+     "n": 2,
+     "per_seed": {
+      "1": 36.00000000000001,
+      "2": 36.0
+     },
+     "std": 7.105427357601002e-15
+    },
+    "weighted_exposure_frac": {
+     "ci95": [
+      0.0,
+      0.0
+     ],
+     "max": 0.0,
+     "mean": 0.0,
+     "min": 0.0,
+     "n": 2,
+     "per_seed": {
+      "1": 0.0,
+      "2": 0.0
+     },
+     "std": 0.0
+    }
+   }
+  },
+  "seeds": [
+   1,
+   2
+  ],
+  "split": "validation"
+ },
+ "stage_d_before_adaptation": {
+  "cross_play": {
+   "critical_success": {
+    "cols": [
+     "GreedyDefender",
+     "Noop",
+     "StaticHardening",
+     "learned_defender"
+    ],
+    "rows": [
+     "ScriptedAttacker",
+     "learned_attacker"
+    ],
+    "values": [
+     [
+      0.6549879807692307,
+      1.0,
+      0.8992788461538461,
+      0.5341646634615385
+     ],
+     [
+      0.8307692307692307,
+      1.0,
+      0.8992788461538461,
+      0.5341646634615385
+     ]
+    ]
+   },
+   "spend": {
+    "cols": [
+     "GreedyDefender",
+     "Noop",
+     "StaticHardening",
+     "learned_defender"
+    ],
+    "rows": [
+     "ScriptedAttacker",
+     "learned_attacker"
+    ],
+    "values": [
+     [
+      24.450000000000006,
+      0.0,
+      36.0,
+      36.0
+     ],
+     [
+      19.1,
+      0.0,
+      36.0,
+      36.0
+     ]
+    ]
+   },
+   "weighted_exposure_frac": {
+    "cols": [
+     "GreedyDefender",
+     "Noop",
+     "StaticHardening",
+     "learned_defender"
+    ],
+    "rows": [
+     "ScriptedAttacker",
+     "learned_attacker"
+    ],
+    "values": [
+     [
+      0.0,
+      0.6371753246753247,
+      0.0,
+      0.27952516233766234
+     ],
+     [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ]
+    ]
+   }
+  },
+  "episodes_per_pair": 2,
+  "missing_seeds": [],
+  "pairs": {
+   "ScriptedAttacker x GreedyDefender": {
+    "availability_violation_rate": {
+     "ci95": [
+      1.0,
+      1.0
+     ],
+     "max": 1.0,
+     "mean": 1.0,
+     "min": 1.0,
+     "n": 2,
+     "per_seed": {
+      "1": 1.0,
+      "2": 1.0
+     },
+     "std": 0.0
+    },
+    "contained_rate": {
+     "ci95": [
+      0.0,
+      0.0
+     ],
+     "max": 0.0,
+     "mean": 0.0,
+     "min": 0.0,
+     "n": 2,
+     "per_seed": {
+      "1": 0.0,
+      "2": 0.0
+     },
+     "std": 0.0
+    },
+    "critical_success": {
+     "ci95": [
+      0.6549879807692307,
+      0.6549879807692307
+     ],
+     "max": 0.6549879807692307,
+     "mean": 0.6549879807692307,
+     "min": 0.6549879807692307,
+     "n": 2,
+     "per_seed": {
+      "1": 0.6549879807692307,
+      "2": 0.6549879807692307
+     },
+     "std": 0.0
+    },
+    "spend": {
+     "ci95": [
+      24.450000000000006,
+      24.450000000000006
+     ],
+     "max": 24.450000000000006,
+     "mean": 24.450000000000006,
+     "min": 24.450000000000006,
+     "n": 2,
+     "per_seed": {
+      "1": 24.450000000000006,
+      "2": 24.450000000000006
+     },
+     "std": 0.0
+    },
+    "weighted_exposure_frac": {
+     "ci95": [
+      0.0,
+      0.0
+     ],
+     "max": 0.0,
+     "mean": 0.0,
+     "min": 0.0,
+     "n": 2,
+     "per_seed": {
+      "1": 0.0,
+      "2": 0.0
+     },
+     "std": 0.0
+    }
+   },
+   "ScriptedAttacker x Noop": {
+    "availability_violation_rate": {
+     "ci95": [
+      0.0,
+      0.0
+     ],
+     "max": 0.0,
+     "mean": 0.0,
+     "min": 0.0,
+     "n": 2,
+     "per_seed": {
+      "1": 0.0,
+      "2": 0.0
+     },
+     "std": 0.0
+    },
+    "contained_rate": {
+     "ci95": [
+      0.0,
+      0.0
+     ],
+     "max": 0.0,
+     "mean": 0.0,
+     "min": 0.0,
+     "n": 2,
+     "per_seed": {
+      "1": 0.0,
+      "2": 0.0
+     },
+     "std": 0.0
+    },
+    "critical_success": {
+     "ci95": [
+      1.0,
+      1.0
+     ],
+     "max": 1.0,
+     "mean": 1.0,
+     "min": 1.0,
+     "n": 2,
+     "per_seed": {
+      "1": 1.0,
+      "2": 1.0
+     },
+     "std": 0.0
+    },
+    "spend": {
+     "ci95": [
+      0.0,
+      0.0
+     ],
+     "max": 0.0,
+     "mean": 0.0,
+     "min": 0.0,
+     "n": 2,
+     "per_seed": {
+      "1": 0.0,
+      "2": 0.0
+     },
+     "std": 0.0
+    },
+    "weighted_exposure_frac": {
+     "ci95": [
+      0.6371753246753247,
+      0.6371753246753247
+     ],
+     "max": 0.6371753246753247,
+     "mean": 0.6371753246753247,
+     "min": 0.6371753246753247,
+     "n": 2,
+     "per_seed": {
+      "1": 0.6371753246753247,
+      "2": 0.6371753246753247
+     },
+     "std": 0.0
+    }
+   },
+   "ScriptedAttacker x StaticHardening": {
+    "availability_violation_rate": {
+     "ci95": [
+      1.0,
+      1.0
+     ],
+     "max": 1.0,
+     "mean": 1.0,
+     "min": 1.0,
+     "n": 2,
+     "per_seed": {
+      "1": 1.0,
+      "2": 1.0
+     },
+     "std": 0.0
+    },
+    "contained_rate": {
+     "ci95": [
+      0.0,
+      0.0
+     ],
+     "max": 0.0,
+     "mean": 0.0,
+     "min": 0.0,
+     "n": 2,
+     "per_seed": {
+      "1": 0.0,
+      "2": 0.0
+     },
+     "std": 0.0
+    },
+    "critical_success": {
+     "ci95": [
+      0.8992788461538461,
+      0.8992788461538461
+     ],
+     "max": 0.8992788461538461,
+     "mean": 0.8992788461538461,
+     "min": 0.8992788461538461,
+     "n": 2,
+     "per_seed": {
+      "1": 0.8992788461538461,
+      "2": 0.8992788461538461
+     },
+     "std": 0.0
+    },
+    "spend": {
+     "ci95": [
+      36.0,
+      36.0
+     ],
+     "max": 36.0,
+     "mean": 36.0,
+     "min": 36.0,
+     "n": 2,
+     "per_seed": {
+      "1": 36.0,
+      "2": 36.0
+     },
+     "std": 0.0
+    },
+    "weighted_exposure_frac": {
+     "ci95": [
+      0.0,
+      0.0
+     ],
+     "max": 0.0,
+     "mean": 0.0,
+     "min": 0.0,
+     "n": 2,
+     "per_seed": {
+      "1": 0.0,
+      "2": 0.0
+     },
+     "std": 0.0
+    }
+   },
+   "ScriptedAttacker x learned_defender": {
+    "availability_violation_rate": {
+     "ci95": [
+      -2.4265,
+      3.9265
+     ],
+     "max": 1.0,
+     "mean": 0.75,
+     "min": 0.5,
+     "n": 2,
+     "per_seed": {
+      "1": 0.5,
+      "2": 1.0
+     },
+     "std": 0.3535533905932738
+    },
+    "contained_rate": {
+     "ci95": [
+      0.0,
+      0.0
+     ],
+     "max": 0.0,
+     "mean": 0.0,
+     "min": 0.0,
+     "n": 2,
+     "per_seed": {
+      "1": 0.0,
+      "2": 0.0
+     },
+     "std": 0.0
+    },
+    "critical_success": {
+     "ci95": [
+      -2.5503237379807695,
+      3.618653064903847
+     ],
+     "max": 0.7769230769230769,
+     "mean": 0.5341646634615385,
+     "min": 0.29140625,
+     "n": 2,
+     "per_seed": {
+      "1": 0.7769230769230769,
+      "2": 0.29140625
+     },
+     "std": 0.34331224069748306
+    },
+    "spend": {
+     "ci95": [
+      36.0,
+      36.0
+     ],
+     "max": 36.0,
+     "mean": 36.0,
+     "min": 36.0,
+     "n": 2,
+     "per_seed": {
+      "1": 36.0,
+      "2": 36.0
+     },
+     "std": 0.0
+    },
+    "weighted_exposure_frac": {
+     "ci95": [
+      -3.272121550324675,
+      3.831171875
+     ],
+     "max": 0.5590503246753247,
+     "mean": 0.27952516233766234,
+     "min": 0.0,
+     "n": 2,
+     "per_seed": {
+      "1": 0.5590503246753247,
+      "2": 0.0
+     },
+     "std": 0.3953082756024632
+    }
+   },
+   "learned_attacker x GreedyDefender": {
+    "availability_violation_rate": {
+     "ci95": [
+      0.5,
+      0.5
+     ],
+     "max": 0.5,
+     "mean": 0.5,
+     "min": 0.5,
+     "n": 2,
+     "per_seed": {
+      "1": 0.5,
+      "2": 0.5
+     },
+     "std": 0.0
+    },
+    "contained_rate": {
+     "ci95": [
+      0.0,
+      0.0
+     ],
+     "max": 0.0,
+     "mean": 0.0,
+     "min": 0.0,
+     "n": 2,
+     "per_seed": {
+      "1": 0.0,
+      "2": 0.0
+     },
+     "std": 0.0
+    },
+    "critical_success": {
+     "ci95": [
+      0.8307692307692307,
+      0.8307692307692307
+     ],
+     "max": 0.8307692307692307,
+     "mean": 0.8307692307692307,
+     "min": 0.8307692307692307,
+     "n": 2,
+     "per_seed": {
+      "1": 0.8307692307692307,
+      "2": 0.8307692307692307
+     },
+     "std": 0.0
+    },
+    "spend": {
+     "ci95": [
+      19.1,
+      19.1
+     ],
+     "max": 19.1,
+     "mean": 19.1,
+     "min": 19.1,
+     "n": 2,
+     "per_seed": {
+      "1": 19.1,
+      "2": 19.1
+     },
+     "std": 0.0
+    },
+    "weighted_exposure_frac": {
+     "ci95": [
+      0.0,
+      0.0
+     ],
+     "max": 0.0,
+     "mean": 0.0,
+     "min": 0.0,
+     "n": 2,
+     "per_seed": {
+      "1": 0.0,
+      "2": 0.0
+     },
+     "std": 0.0
+    }
+   },
+   "learned_attacker x Noop": {
+    "availability_violation_rate": {
+     "ci95": [
+      0.0,
+      0.0
+     ],
+     "max": 0.0,
+     "mean": 0.0,
+     "min": 0.0,
+     "n": 2,
+     "per_seed": {
+      "1": 0.0,
+      "2": 0.0
+     },
+     "std": 0.0
+    },
+    "contained_rate": {
+     "ci95": [
+      0.0,
+      0.0
+     ],
+     "max": 0.0,
+     "mean": 0.0,
+     "min": 0.0,
+     "n": 2,
+     "per_seed": {
+      "1": 0.0,
+      "2": 0.0
+     },
+     "std": 0.0
+    },
+    "critical_success": {
+     "ci95": [
+      1.0,
+      1.0
+     ],
+     "max": 1.0,
+     "mean": 1.0,
+     "min": 1.0,
+     "n": 2,
+     "per_seed": {
+      "1": 1.0,
+      "2": 1.0
+     },
+     "std": 0.0
+    },
+    "spend": {
+     "ci95": [
+      0.0,
+      0.0
+     ],
+     "max": 0.0,
+     "mean": 0.0,
+     "min": 0.0,
+     "n": 2,
+     "per_seed": {
+      "1": 0.0,
+      "2": 0.0
+     },
+     "std": 0.0
+    },
+    "weighted_exposure_frac": {
+     "ci95": [
+      0.0,
+      0.0
+     ],
+     "max": 0.0,
+     "mean": 0.0,
+     "min": 0.0,
+     "n": 2,
+     "per_seed": {
+      "1": 0.0,
+      "2": 0.0
+     },
+     "std": 0.0
+    }
+   },
+   "learned_attacker x StaticHardening": {
+    "availability_violation_rate": {
+     "ci95": [
+      1.0,
+      1.0
+     ],
+     "max": 1.0,
+     "mean": 1.0,
+     "min": 1.0,
+     "n": 2,
+     "per_seed": {
+      "1": 1.0,
+      "2": 1.0
+     },
+     "std": 0.0
+    },
+    "contained_rate": {
+     "ci95": [
+      0.0,
+      0.0
+     ],
+     "max": 0.0,
+     "mean": 0.0,
+     "min": 0.0,
+     "n": 2,
+     "per_seed": {
+      "1": 0.0,
+      "2": 0.0
+     },
+     "std": 0.0
+    },
+    "critical_success": {
+     "ci95": [
+      0.8992788461538461,
+      0.8992788461538461
+     ],
+     "max": 0.8992788461538461,
+     "mean": 0.8992788461538461,
+     "min": 0.8992788461538461,
+     "n": 2,
+     "per_seed": {
+      "1": 0.8992788461538461,
+      "2": 0.8992788461538461
+     },
+     "std": 0.0
+    },
+    "spend": {
+     "ci95": [
+      36.0,
+      36.0
+     ],
+     "max": 36.0,
+     "mean": 36.0,
+     "min": 36.0,
+     "n": 2,
+     "per_seed": {
+      "1": 36.0,
+      "2": 36.0
+     },
+     "std": 0.0
+    },
+    "weighted_exposure_frac": {
+     "ci95": [
+      0.0,
+      0.0
+     ],
+     "max": 0.0,
+     "mean": 0.0,
+     "min": 0.0,
+     "n": 2,
+     "per_seed": {
+      "1": 0.0,
+      "2": 0.0
+     },
+     "std": 0.0
+    }
+   },
+   "learned_attacker x learned_defender": {
+    "availability_violation_rate": {
+     "ci95": [
+      -2.4265,
+      3.9265
+     ],
+     "max": 1.0,
+     "mean": 0.75,
+     "min": 0.5,
+     "n": 2,
+     "per_seed": {
+      "1": 0.5,
+      "2": 1.0
+     },
+     "std": 0.3535533905932738
+    },
+    "contained_rate": {
+     "ci95": [
+      0.0,
+      0.0
+     ],
+     "max": 0.0,
+     "mean": 0.0,
+     "min": 0.0,
+     "n": 2,
+     "per_seed": {
+      "1": 0.0,
+      "2": 0.0
+     },
+     "std": 0.0
+    },
+    "critical_success": {
+     "ci95": [
+      -2.5503237379807695,
+      3.618653064903847
+     ],
+     "max": 0.7769230769230769,
+     "mean": 0.5341646634615385,
+     "min": 0.29140625,
+     "n": 2,
+     "per_seed": {
+      "1": 0.7769230769230769,
+      "2": 0.29140625
+     },
+     "std": 0.34331224069748306
+    },
+    "spend": {
+     "ci95": [
+      36.0,
+      36.0
+     ],
+     "max": 36.0,
+     "mean": 36.0,
+     "min": 36.0,
+     "n": 2,
+     "per_seed": {
+      "1": 36.0,
+      "2": 36.0
+     },
+     "std": 0.0
+    },
+    "weighted_exposure_frac": {
+     "ci95": [
+      0.0,
+      0.0
+     ],
+     "max": 0.0,
+     "mean": 0.0,
+     "min": 0.0,
+     "n": 2,
+     "per_seed": {
+      "1": 0.0,
+      "2": 0.0
+     },
+     "std": 0.0
+    }
+   }
+  },
+  "seeds": [
+   1,
+   2
+  ],
+  "split": "validation"
+ }
+}

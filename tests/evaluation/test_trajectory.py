@@ -138,3 +138,16 @@ def test_cli_export_and_validate_exit_codes(tmp_path):
     assert T.main(["validate", str(tmp_path)]) == 2                     # nothing to validate
     assert T.main(["export", "--attacker-checkpoint", "nope.pt", "--defender-checkpoint", "nope.pt",
                    "--out", str(tmp_path / "x")]) == 2
+
+
+def test_real_checkpoint_export_records_identity_and_validates(school_ckpts, world_path, tmp_path):
+    out = tmp_path / "t"
+    assert T.main(["export", "--attacker-checkpoint", school_ckpts["attacker"], "--defender-checkpoint",
+                   school_ckpts["defender"], "--config", world_path, "--episodes", "2", "--out", str(out)]) == 0
+    assert len(T.validate_dir(out)) == 2
+    m = json.loads(sorted(out.glob("*.manifest.json"))[0].read_text())
+    for role in T.ROLES:
+        p = m["policies"][role]
+        assert p["policy_id"].startswith(f"{role}:") and p["checkpoint_id"] in p["policy_id"]
+        assert p["normalizer_version"] == T.NORMALIZER_VERSION and len(p["normalizer_hash"]) == 16
+    assert T.main(["validate", str(out)]) == 0
