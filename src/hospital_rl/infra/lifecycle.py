@@ -194,17 +194,38 @@ class GatewayBackend(JobBackend):
 
 
 # ------------------------------------------------------------------------------------------------------------------
+def _process_identity(pid: int) -> str | None:
+    """Return a PID-reuse-resistant identity without launching another process.
+
+    Linux exposes the process start tick in ``/proc/<pid>/stat``.  Other
+    platforms still get a safe liveness check; they just cannot distinguish a
+    reused PID after a controller restart.
+    """
+    try:
+        stat = Path(f"/proc/{pid}/stat").read_text()
+        fields = stat[stat.rfind(")") + 2 :].split()
+        return f"proc-{fields[19]}"
+    except (OSError, IndexError):
+        return None
+
+
 def _pid_alive(pid: int, started: str) -> bool:
     try:
         os.kill(pid, 0)
     except OSError:
         return False
-    return subprocess.run(["ps", "-p", str(pid), "-o", "lstart="], capture_output=True, text=True).stdout.strip() == started
+    current = _process_identity(pid)
+    return current == started if started.startswith("proc-") else True
 
 
 class LocalGateway:
-    """Subprocess transport. remote_id = "<pid>:<lstart>" so a restarted controller can re-attach (liveness only: the
-    exit status of a process we did not start is unknowable, so its outcome is read from result.json)."""
+    """Subprocess transport with restart-safe liveness reattachment.
+
+    The remote id includes the process start tick where ``/proc`` is available,
+    preventing a reused PID from being mistaken for the original job.  The exit
+    status of a process we did not start is unknowable, so its outcome is read
+    from ``result.json``.
+    """
 
     def __init__(self, root: str | Path, python: str = sys.executable, env: dict[str, str] | None = None):
         self.root, self.python, self.env = Path(root), python, env or {}
@@ -226,7 +247,7 @@ class LocalGateway:
         ctl.parent.mkdir(parents=True, exist_ok=True)
         ctl.unlink(missing_ok=True)
         proc = self._launch(spec)
-        started = subprocess.run(["ps", "-p", str(proc.pid), "-o", "lstart="], capture_output=True, text=True).stdout.strip()
+        started = _process_identity(proc.pid) or "pid-only"
         rid = f"{proc.pid}|{started}|{spec.run_id}|{spec.attempt_id}"
         self._procs[rid], self._specs[rid] = proc, spec
         threading.Thread(target=self._supervise, args=(rid,), daemon=True).start()
