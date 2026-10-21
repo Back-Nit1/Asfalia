@@ -82,7 +82,7 @@ Interfaces: `JobBackend` (`submit/status/drain/checkpoint_and_stop/force_cancel`
 - **ModalBackend**: same `GatewayBackend` as local, over `RealModalGateway`; see [cloud_lifecycle.md](cloud_lifecycle.md)
   for the bundle, semantics, ephemeral vs deployed modes, packaging, and limits. Not built: second-mode distributed
   rollout workers.
-- **DaytonaBackend**: **DEFERRED** stub, every method raises `NotImplementedError("DEFERRED ...")`.
+- **DaytonaBackend**: common `GatewayBackend` over `DaytonaGateway` (fake-provider tested; **LIVE UNVERIFIED**). See [daytona.md](daytona.md).
 
 ### Live Modal smoke (tiny, opt-in)
 `ASFALIA_LIVE_MODAL=1 PYTHONPATH=src python tests/infra/modal_smoke.py` (real hospital env; done + stop + resume; <= 3 jobs).
@@ -96,7 +96,7 @@ and an **ESTIMATE**: `cpu_core_hours_upper_bound = cpu x max_containers x (1+max
 that cannot be exceeded) and, only if the config supplies `estimate.steps_per_sec` (a user assumption, labeled so),
 an expected runtime. No prices, credits or billing are inferred. Credentials are checked by presence only
 (env var names / `~/.modal.toml` existence; contents never read). Missing credentials -> setup instructions and
-`effective_backend: local`; Daytona -> always local (DEFERRED).
+`effective_backend: local`. Daytona is planned the same way (dry run, no SDK import, no network).
 
 Secret names (values never read into code or logs): Modal `MODAL_TOKEN_ID`, `MODAL_TOKEN_SECRET` (or `modal setup`);
 Daytona `DAYTONA_API_KEY`; Modal Secret objects mounted into jobs via `secret_names` (none needed today).
@@ -136,7 +136,7 @@ Single run, toy 8-node model; no speedup target is claimed and the python backen
 Tested: masked PPO, padding invariance, versioned rollouts, checkpoints, interrupts, league/curriculum, the common
 lifecycle (local subprocess with the real hospital env: done/drain/stop/cancel/timeout/resume/kill-retry; fake
 gateways: every state mapping, restart idempotence, cleanup protections), bundle validation + clean-interpreter import,
-school jobs, cloud-plan, ONNX + native parity. **DEFERRED / UNEXECUTED**: Daytona (Agent H); Modal deployed mode and every
+school jobs, cloud-plan, ONNX + native parity. **UNEXECUTED**: any live Daytona run (fake-provider and local-only, see daytona.md); Modal deployed mode and every
 real-Modal control/timeout/preemption/quota path; Modal distributed rollout workers; learner consumption of pinned
 opponent/normalizer versions; GRU; GPU; Linux/Windows native builds; hosted dashboard endpoints.
 
@@ -147,5 +147,5 @@ Role x seed school driver off-device, one container/sandbox per (role, seed), al
   `--detach` (deployed app, UNEXECUTED) then `... status --tag <tag>`; fetch with `modal volume get hospital-rl-school /<run> runs/cloud-<run>`.
   Re-running a tag creates the next attempt, resuming from the previous one. 2 CPU / 4 GiB per run. **Regression to know:**
   the previous `modal run -d` fan-out survived the client; the default ephemeral mode does not (use `--detach` once verified).
-- Daytona: unchanged: `python -m hospital_rl.infra.cloud_school daytona --steps 50000 --seeds 7,8`.
+- Daytona: thin caller of `DaytonaBackend` (same specs/caps/attempt ids as Modal; verified artifacts mirrored to `runs/daytona/store/<run>/<attempt>`): `python -m hospital_rl.infra.cloud_school daytona --steps 50000 --seeds 7,8`. **Live-unverified**; the 2026-10-21 Daytona smoke was the removed pre-refactor launcher.
 - The 2026-10-21 live smokes were of the pre-refactor launcher. "Faster" = more seeds/roles in parallel, not a faster single run.
