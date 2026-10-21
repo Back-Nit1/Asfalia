@@ -3,7 +3,7 @@ name: scratch_adapt
 world_config: configs/hospital40.yaml
 seed: 7
 trainable_role: defender
-league: on
+league: "on"
 school:
   attacker_config: configs/attacker_school.yaml
   defender_config: configs/defender_school.yaml

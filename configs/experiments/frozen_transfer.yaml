@@ -3,7 +3,7 @@ name: frozen_transfer
 world_config: configs/hospital40.yaml
 seed: 7
 trainable_role: defender
-league: off
+league: "off"
 checkpoints:
   attacker: CHANGE_ME/attacker/best.pt
   defender: CHANGE_ME/defender/best.pt
