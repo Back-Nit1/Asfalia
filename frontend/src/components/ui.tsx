@@ -33,6 +33,7 @@ export function Card({ title, value, sub }: { title: string; value: ReactNode; s
 /** Polls a JSON endpoint; keeps the last good value and flags staleness instead of blanking. */
 export function useJson<T>(path: string | null, everyMs = 0) {
   const [data, setData] = useState<T | null>(null);
+  const [tries, setTries] = useState(0);
   const [error, setError] = useState<unknown>(null);
   const [updatedAt, setUpdatedAt] = useState<number | null>(null);
   const alive = useRef(true);
@@ -40,9 +41,9 @@ export function useJson<T>(path: string | null, everyMs = 0) {
     if (!path) return;
     try {
       const d = await api<T>(path);
-      if (alive.current) { setData(d); setError(null); setUpdatedAt(Date.now()); }
+      if (alive.current) { setData(d); setError(null); setUpdatedAt(Date.now()); setTries((n) => n + 1); }
     } catch (e) {
-      if (alive.current) setError(e);
+      if (alive.current) { setError(e); setTries((n) => n + 1); }
     }
   }, [path]);
   useEffect(() => {
@@ -51,5 +52,20 @@ export function useJson<T>(path: string | null, everyMs = 0) {
     const t = everyMs ? setInterval(load, everyMs) : undefined;
     return () => { alive.current = false; if (t) clearInterval(t); };
   }, [load, everyMs]);
-  return { data, error, updatedAt, reload: load };
+  return { data, error, updatedAt, reload: load, loading: tries === 0 };
+}
+
+export function Loading({ what }: { what: string }) {
+  return <p className="muted" role="status" aria-live="polite">Loading {what}…</p>;
+}
+
+export function Empty({ children }: { children: ReactNode }) {
+  return <p className="muted" role="status">{children}</p>;
+}
+
+/** Honest freshness: if the last poll failed we keep showing the last good data but say so. */
+export function Freshness({ error, updatedAt }: { error: unknown; updatedAt: number | null }) {
+  if (!error || updatedAt === null) return null;
+  const s = Math.round((Date.now() - updatedAt) / 1000);
+  return <div className="banner bad" role="alert"><Badge kind="bad">disconnected</Badge> showing last known data from {s}s ago — the backend is not responding.</div>;
 }

@@ -29,13 +29,15 @@ export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
   try { body = JSON.parse(text); } catch { /* not json */ }
   if (!res.ok) {
     const detail = typeof body === "object" && body && "detail" in body ? String((body as { detail: unknown }).detail) : res.statusText;
-    throw new ApiError(res.status, detail, body);
+    const errs = typeof body === "object" && body && "errors" in body ? (body as { errors: string[] }).errors : null;
+    throw new ApiError(res.status, errs ? errs.join(" · ") : detail, body);
   }
   return body as T;
 }
 
-export const mutate = <T,>(path: string): Promise<T> =>
-  api<T>(path, { method: "POST", headers: { "Idempotency-Key": crypto.randomUUID() } });
+export const mutate = <T,>(path: string, body?: unknown, key: string = crypto.randomUUID()): Promise<T> =>
+  api<T>(path, { method: "POST", headers: { "Idempotency-Key": key, ...(body === undefined ? {} : { "Content-Type": "application/json" }) },
+    body: body === undefined ? undefined : JSON.stringify(body) });
 
 export const worldPath = (p: Perspective, episode: string, leaf: string): string =>
   `/api/world/${p}/episodes/${encodeURIComponent(episode)}/${leaf}`;

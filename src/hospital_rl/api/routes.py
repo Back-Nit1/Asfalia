@@ -74,7 +74,8 @@ def build_router(controller: bool = False) -> APIRouter:
                 **(request.app.state.controller.overview() if controller else {"runs": {**NOT_CONFIGURED, "count": 0}, "infrastructure": NOT_CONFIGURED}),
                 "stale_running": [t.id for t in tasks if t.status is Status.running and t.lease_expiry and t.lease_expiry < s.scheduler.clock()],
                 "latest_evaluation": None, "step_rate": None, "spend_estimate": None} | (
-            {"latest_evaluation": request.app.state.controller.latest_evaluation()} if controller else {})
+            {"latest_evaluation": request.app.state.controller.latest_evaluation(),
+             "step_rate": request.app.state.controller.infrastructure()["estimate"]["steps_per_sec"]} if controller else {})
 
     @op.get("/tasks")
     def tasks(request: Request):
