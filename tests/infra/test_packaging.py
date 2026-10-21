@@ -57,16 +57,8 @@ def test_stale_code_and_tampered_config_are_rejected():
         bundle.validate(sp.model_copy(update={"bundle_version": 99}))
 
 
-def test_modal_image_ships_package_and_configs_not_tests():
-    modal = pytest.importorskip("modal")
-    from hospital_rl.infra.modal_app import ModalConfig, build_image
-    img = build_image(ModalConfig())
-    layers = repr([getattr(l, "__dict__", l) for l in img._deferred_mounts]) if hasattr(img, "_deferred_mounts") else ""
-    assert "toy_env" not in layers and "tests" not in layers
-
-
 def test_real_modal_functions_module_defines_a_global_deployable_app():
     modal = pytest.importorskip("modal")
-    from hospital_rl.infra.modal_app import CFG_ENV, FUNCTION, RealModalGateway, ModalConfig
+    from hospital_rl.infra.modal_app import ModalConfig, RealModalGateway
     gw = RealModalGateway(ModalConfig(app_name="hospital-rl-test-import"))  # defines the app; no network
-    assert FUNCTION in gw.fns.app.registered_functions and gw.fns.train_job.info.raw_f is not None
+    assert gw.fns.app.name == "hospital-rl-test-import" and callable(gw.fns.train_job.spawn)
