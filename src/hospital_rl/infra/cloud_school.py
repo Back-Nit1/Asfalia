@@ -7,24 +7,18 @@ Modal runs through the common job lifecycle (``lifecycle.GatewayBackend`` + ``mo
     python -m hospital_rl.infra.cloud_school status --tag <tag>                         # re-attach from the registry
     modal volume get hospital-rl-school /<tag>-<role>-s<seed> runs/cloud-<tag>-<role>-s<seed>
 Re-running a tag starts a new attempt that resumes from the previous attempt (checkpoint + school_state.json).
-Daytona (sandboxes; client must stay up, results are downloaded into runs/daytona/<tag>):
+Daytona (common backend; client must stay up, verified artifacts are mirrored into runs/daytona/store/<run>/<attempt>):
     python -m hospital_rl.infra.cloud_school daytona --steps 50000 --seeds 7,8
-Secrets: Modal auth via ~/.modal.toml; DAYTONA_API_KEY/DAYTONA_API_URL read from env or .env (never printed).
+Secrets: Modal auth via ~/.modal.toml; Daytona via DAYTONA_API_KEY in the process environment (no .env is read; never printed).
 """
 from __future__ import annotations
 
 import argparse
-import io
-import os
-import tarfile
 import time
-from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 from hospital_rl.infra.backend import JobSpec
-from hospital_rl.infra.bundle import DEPS, TORCH_CPU  # light imports only: Daytona-only installs have no torch
 
-ROOT = Path(__file__).resolve().parents[min(3, len(Path(__file__).resolve().parents) - 1)]  # container: /root/x.py
 CONFIG = {"attacker": "configs/attacker_school.yaml", "defender": "configs/defender_school.yaml"}
 APP = "hospital-rl-school"
 
@@ -83,52 +77,22 @@ def status_main(a) -> None:
             print(f"{r['job_id']} {st.state.value} ckpt={st.checkpoint} {st.detail}")
 
 
-def _bundle() -> bytes:
-    buf = io.BytesIO()
-    with tarfile.open(fileobj=buf, mode="w:gz") as t:
-        t.add(ROOT / "src/hospital_rl", "src/hospital_rl", filter=lambda i: None if "__pycache__" in i.name else i)
-        t.add(ROOT / "configs", "configs")
-    return buf.getvalue()
-
-
-def _daytona_job(client, bundle: bytes, j: dict, dest: Path) -> str:
-    from daytona import CreateSandboxFromImageParams, Image, Resources
-
-    sb = client.create(CreateSandboxFromImageParams(
-        image=Image.debian_slim("3.12"), resources=Resources(cpu=4, memory=8, disk=10),
-        auto_delete_interval=0, labels={"app": "hospital-rl"}), timeout=300)
-    try:
-        sb.fs.upload_file(bundle, "/home/daytona/b.tgz")
-        sb.process.exec(f"tar xzf b.tgz && pip install -q torch --index-url {TORCH_CPU} && pip install -q {' '.join(DEPS)}",
-                        cwd="/home/daytona", timeout=1800)
-        run = sb.process.exec(
-            f"PYTHONPATH=src python -m hospital_rl.training.schools --role {j['role']} --config {CONFIG[j['role']]} "
-            f"--steps {j['steps']} --seed {j['seed']} --lr {j['lr']} --ent-coef {j['ent_coef']} --out out",
-            cwd="/home/daytona", timeout=j["timeout"])
-        dest.mkdir(parents=True, exist_ok=True)
-        (dest / "stdout.txt").write_text(run.result)
-        for f in ("best.pt", "best.pt.meta.json", "metrics.jsonl", "school_state.json"):
-            if data := sb.fs.download_file(f"/home/daytona/out/{f}"):
-                (dest / f).write_bytes(data)
-        return f"{dest} exit={run.exit_code}"
-    finally:
-        sb.delete()
-
-
 def daytona_main(a) -> None:
-    from daytona import Daytona
+    """Thin caller of the common Daytona backend: same caps, attempt ids, mirror verification and resume as Modal.
+    Credentials come from the process environment only (the SDK reads DAYTONA_API_KEY); no .env is read."""
+    from hospital_rl.infra.daytona_backend import DaytonaBackend, DaytonaConfig, DaytonaGateway, SdkClient
+    from hospital_rl.infra.lifecycle import ResourceCaps
 
-    if not os.environ.get("DAYTONA_API_KEY"):
-        from dotenv import dotenv_values
-        os.environ.update({k: v for k, v in dotenv_values(ROOT / ".env").items() if k.startswith("DAYTONA") and v})
-    client, bundle, tag = Daytona(), _bundle(), a.tag or time.strftime("%Y%m%d-%H%M%S")
-    jobs = [dict(role=r, seed=int(s), steps=a.steps, lr=a.lr, ent_coef=a.ent_coef, timeout=a.timeout)
-            for r in a.roles.split(",") for s in a.seeds.split(",")]
-    with ThreadPoolExecutor(len(jobs)) as ex:
-        futs = [ex.submit(_daytona_job, client, bundle, j, ROOT / "runs/daytona" / tag / f"{j['role']}-s{j['seed']}")
-                for j in jobs]
-        for f in futs:
-            print(f.result())
+    n = len(a.roles.split(",")) * len(a.seeds.split(","))
+    cfg = DaytonaConfig(registry_dir="runs/.registry/school-daytona", mirror_dir="runs/daytona/store",
+                        caps=ResourceCaps(cpu=2, memory_mb=4096, timeout_s=a.timeout, grace_s=120, max_containers=n, max_steps=a.steps))
+    be = DaytonaBackend(cfg, DaytonaGateway(cfg, SdkClient(cfg)))
+    ids = [be.submit(sp) for sp in school_specs(a, be)]
+    while not all((st := be.status(j)).state.terminal for j in ids):
+        time.sleep(10)
+    for j in ids:
+        st = be.status(j)
+        print(f"{j} {st.state.value} {st.result.get('env_steps')} steps {st.detail}")
 
 
 if __name__ == "__main__":

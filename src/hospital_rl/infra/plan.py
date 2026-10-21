@@ -48,8 +48,7 @@ def cloud_plan(backend: str, config_path: str | Path, env=os.environ, home: Path
     caps = raw.get("caps", {})
     job = JobSpec(run_id="plan", attempt_id="plan", train_config=raw.get("train", {}),
                   **{k: caps[k] for k in ("timeout_s", "grace_s", "cpu", "memory_mb", "max_containers", "max_retries") if k in caps})
-    if backend != "daytona":  # Daytona configs belong to its own owner; everything else must resolve to a runnable bundle
-        validate(resolve(job))
+    validate(resolve(job))
     steps = job.train_config.get("total_steps", 0)
     core_hours_cap = job.cpu * job.max_containers * (1 + job.max_retries) * job.timeout_s / 3600
     est = {"label": "ESTIMATE - not provider-reported usage; no currency cost is inferred",
@@ -65,9 +64,6 @@ def cloud_plan(backend: str, config_path: str | Path, env=os.environ, home: Path
     notes = []
     if not ok:
         notes.append(f"{backend} credentials not found; falling back to local. Setup: {s['setup']}")
-    if backend == "daytona":
-        notes.append("DEFERRED: Daytona backend is not implemented; falling back to local.")
-        ok = False
     return CloudPlan(
         requested_backend=backend, effective_backend=backend if ok else "local", config_path=str(config_path),
         resolved={"backend": backend, **{k: v for k, v in raw.items() if k not in ("caps", "estimate")}, "job": job.model_dump(exclude={"run_id", "attempt_id"})},
