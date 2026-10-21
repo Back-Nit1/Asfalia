@@ -25,7 +25,9 @@ def main(argv: list[str] | None = None) -> int:
     for name in ("train", "evaluate", "adapt", "orchestrate", "dashboard", "cloud-plan", "cleanup",
                  "export-policy", "benchmark-inference"):
         sub.add_parser(name)
-    args, _ = p.parse_known_args(argv)
+    args, rest = p.parse_known_args(argv)
+    if args.cmd in _DELEGATE:
+        return _delegate(args.cmd, rest)
     if args.cmd == "demo":
         return _demo(args)
     if args.cmd == "replay":
@@ -36,6 +38,18 @@ def main(argv: list[str] | None = None) -> int:
         return _bench(args)
     print(f"hospital-rl {args.cmd}: not implemented yet", file=sys.stderr)
     return 2
+
+
+_DELEGATE = {"train": "hospital_rl.training.schools", "dashboard": "hospital_rl.api.__main__",
+             "orchestrate": "hospital_rl.orchestration.__main__", "cloud-plan": "hospital_rl.infra.plan",
+             "evaluate": "hospital_rl.evaluation.transfer", "adapt": "hospital_rl.training.adapt",
+             "export-policy": "hospital_rl.infra.inference_cli"}
+
+
+def _delegate(cmd: str, rest: list[str]) -> int:
+    import importlib
+
+    return importlib.import_module(_DELEGATE[cmd]).main(rest) or 0
 
 
 def _demo(args) -> int:

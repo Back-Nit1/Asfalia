@@ -8,7 +8,12 @@ from .single_role import ScriptedOpponent, SingleRoleEnv
 
 
 def school_env(config: str, level: int = 0, split: str = "train", seed: int = 0) -> SingleRoleEnv:
-    return build_env(load_config(config), level, split, seed)
+    cfg = load_config(config)
+    env = build_env(cfg, level, split, seed)
+    if split == "train" and cfg["role"] == "attacker" and cfg.get("shaping", 0):
+        from .shaping import AttackerShaping
+        env = AttackerShaping(env, cfg["shaping"])      # training only; validation stays unshaped
+    return env
 
 
 def hospital_penv(size: int = 40, split: str = "validation", difficulty: float = 0.7, horizon: int = 60):

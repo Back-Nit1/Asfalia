@@ -40,7 +40,7 @@ def generate(family: str, size: int, seed: int, difficulty: float = 0.5, workloa
     wss = [f"ws{i}" for i in range(n_ws)]
     for i, w in enumerate(wss):
         N(id=w, asset_type="workstation", zone="clinical",
-          vulns=(["priv_esc"] if rng.random() < p_vuln else []) + (["lateral"] if rng.random() < difficulty else []),
+          vulns=(["priv_esc"] if (i == 0 or rng.random() < p_vuln) else []) + (["lateral"] if rng.random() < difficulty else []),
           credentials=["c_clin"] if i == 0 else [], allowed_roles=["clinician", "device_gw"], logging=base_logging)
     devs = [f"dev{i}" for i in range(n_dev)]
     for dv in devs:
