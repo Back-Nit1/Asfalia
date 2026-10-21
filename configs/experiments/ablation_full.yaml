@@ -1,0 +1,14 @@
+# Full reference configuration for the ablation grid (pretrained schools + league + adaptation, validation split).
+# Variants are generated from this file: python -m hospital_rl.evaluation.ablations write --base <this> --out configs/experiments/ablations
+name: ablation_full
+world_config: configs/hospital40.yaml
+seed: 7
+trainable_role: defender
+league: "on"
+school:
+  attacker_config: configs/attacker_school.yaml
+  defender_config: configs/defender_school.yaml
+  steps: 100000
+adapt: {steps: 50000}
+transfer: {split: validation, episodes: 20}
+arms: [pretrained]
