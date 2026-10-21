@@ -5,8 +5,8 @@ test("build board -> world -> perspective switch -> reload", async ({ page }) =>
   await page.goto("/build");
   await expect(page.getByRole("heading", { name: "Build" })).toBeVisible();
   await expect(page.getByText("coding runtime not configured").first()).toBeVisible();
-  await page.getByRole("button", { name: "attacker-curriculum" }).click();
-  await expect(page.getByRole("heading", { name: "attacker-curriculum" })).toBeVisible();
+  await page.getByRole("button", { name: "experiment-pipeline" }).click();
+  await expect(page.getByRole("heading", { name: "experiment-pipeline" })).toBeVisible();
   await expect(page.getByText("No acceptance results yet")).toBeVisible();
   await expect(page.getByRole("button", { name: "Integrate" })).toBeDisabled();
   await expect(page.getByText(/stream connected/)).toBeVisible();
@@ -46,5 +46,5 @@ test("build board -> world -> perspective switch -> reload", async ({ page }) =>
   // build state survives a reload too (server is the source of truth)
   await page.goto("/build");
   await page.reload();
-  await expect(page.getByRole("button", { name: "attacker-curriculum" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "experiment-pipeline" })).toBeVisible();
 });
