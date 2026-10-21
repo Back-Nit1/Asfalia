@@ -90,7 +90,9 @@ def load_actor(path: str, role: str, seed: int = 0, deterministic: bool = False)
                         "config_hash": meta.config_hash, "code_revision": meta.code_revision, "seed": meta.seed})
 
 
-def play(penv, att, dfn, seed: int) -> dict:
+def play(penv, att, dfn, seed: int, sink=None) -> dict:
+    if sink is not None:                                  # data.trajectory.TrajectoryWriter: same episode, recorded
+        return sink(penv, att, dfn, seed)
     obs, _ = penv.reset(seed=seed)
     att.bind(penv, "attacker"); dfn.bind(penv, "defender")
     att.reset(); dfn.reset()
@@ -105,11 +107,11 @@ def eval_seeds(split: str, n: int) -> list[int]:
     return [SPLITS[split]["seeds"].start + i for i in range(n)]
 
 
-def evaluate_pair(att, dfn, world: WorldConfig, split: str, n: int) -> dict:
+def evaluate_pair(att, dfn, world: WorldConfig, split: str, n: int, sink=None) -> dict:
     penv = world_penv(world, split)
     seeds = eval_seeds(split, n)
     att.reseed(seeds[0]); dfn.reseed(seeds[0])
-    runs = [play(penv, att, dfn, s) for s in seeds]
+    runs = [play(penv, att, dfn, s, sink) for s in seeds]
     by_fam = defaultdict(list)
     for r in runs:
         by_fam[r["family"]].append(r)

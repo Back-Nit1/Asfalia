@@ -4,6 +4,7 @@ from __future__ import annotations
 from ..policies.scripted import GreedyDefender, IsolateEverything, Noop, ScriptedAttacker, StaticHardening
 from ..runner import run_episode
 from .counterfactual import _ci
+from .metrics import aggregate, episode_objectives
 from .splits import SPLITS, scenario_for, split_hash
 
 DEFENDERS = {"noop": Noop, "static_hardening": StaticHardening, "greedy": GreedyDefender,
@@ -17,8 +18,9 @@ def run(split: str, n: int, size: int = 8, difficulty: float = 0.5, horizon: int
     specs = {s: scenario_for(split, s, size, difficulty, horizon) for s in seeds}
     out = {"split": split, "split_hash": split_hash(), "n_scenarios": n, "defenders": {}}
     for name, mk in DEFENDERS.items():
-        runs = [run_episode(specs[s], s, ScriptedAttacker(), mk())["metrics"] for s in seeds]
-        benign = [run_episode(specs[s], s, _Idle(), mk())["metrics"] for s in seeds]
+        eps = [run_episode(specs[s], s, ScriptedAttacker(), mk()) for s in seeds]
+        beps = [run_episode(specs[s], s, _Idle(), mk()) for s in seeds]
+        runs, benign = [e["metrics"] for e in eps], [e["metrics"] for e in beps]
         row = {k: _ci([r[k] for r in runs]) for k in KEYS}
         thr = specs[seeds[0]].critical_success_threshold
         row["availability_violation_rate"] = sum(r["availability_violation"] for r in runs) / n
@@ -26,6 +28,7 @@ def run(split: str, n: int, size: int = 8, difficulty: float = 0.5, horizon: int
         row["benign_false_positive_alerts"] = _ci([r["false_positive_alerts"] for r in benign])
         contained = [r["containment_tick"] for r in runs if r["containment_tick"] is not None]
         row["containment_time"] = {"observed": contained, "censored": n - len(contained)}   # never 0 for censored
+        row["objectives"] = aggregate([episode_objectives(e) for e in eps] + [episode_objectives(e, True) for e in beps])
         out["defenders"][name] = row
     return out
 

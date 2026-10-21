@@ -1,6 +1,5 @@
 import json
 
-from hospital_rl.data import trajectory
 from hospital_rl.envs.curricula import build_env, load_config
 from hospital_rl.evaluation import counterfactual as cf
 from hospital_rl.policies.scripted import GreedyDefender, Noop, ScriptedAttacker, StaticHardening
@@ -8,14 +7,6 @@ from hospital_rl.runner import run_episode
 from hospital_rl.schemas import load_scenario
 
 SPEC = load_scenario("configs/tiny.yaml")
-
-
-def test_trajectory_export_validates_and_separates_privileged(tmp_path):
-    ep = run_episode(SPEC, 7, ScriptedAttacker(), GreedyDefender(), record=True)
-    info = trajectory.export(ep, str(tmp_path), "e1", {"attacker": "scripted", "defender": "scripted"})
-    assert trajectory.validate(str(tmp_path / "e1.jsonl")) == info["rows"] == 2 * SPEC.horizon
-    assert json.load(open(tmp_path / "e1.privileged.json"))["PRIVILEGED"] is True
-    assert "truth" not in open(tmp_path / "e1.jsonl").read()
 
 
 def test_fixed_intent_blocked_actions_fail():

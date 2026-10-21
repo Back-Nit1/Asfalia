@@ -1,0 +1,75 @@
+{
+ "kind": "adapt",
+ "identity": {
+  "kind": "adapt",
+  "role": "defender",
+  "init": "pretrained",
+  "source_checkpoint_id": "d31102b765787c65",
+  "opponent_checkpoint_id": "b98ec01213a997f7",
+  "world_hash": "eb5fd09a06240422",
+  "seed": 1,
+  "league": false,
+  "league_checkpoints": [],
+  "eval_checkpoints": [],
+  "n_envs": 2,
+  "rollout_len": 32
+ },
+ "resumed": false,
+ "code_revision": "f44a68938e7e8725fdeb4a9bf3dd123697d831fa",
+ "world_config": {
+  "role": "shared",
+  "size": 12,
+  "horizon": 20,
+  "difficulty": 0.5,
+  "base_logging": 1
+ },
+ "world_config_path": "configs/experiments/smoke_world.yaml",
+ "hashes": {
+  "world": "eb5fd09a06240422",
+  "split": "40a031b1a42fa0e9",
+  "catalog": "61d1810d111caf0f"
+ },
+ "checkpoints": {
+  "source": "d31102b765787c65",
+  "opponent": "b98ec01213a997f7",
+  "best": "75bd801d8246e7a1",
+  "best_path": "RUN/arms/pretrained/best.pt",
+  "latest_path": "RUN/arms/pretrained/latest.pt"
+ },
+ "budget": {
+  "requested_adapt_steps": 128,
+  "adapt_env_steps": 128,
+  "pretrain_env_steps": 128,
+  "total_env_steps": 256
+ },
+ "validation": {
+  "success": 1.0,
+  "exposure": 0.0,
+  "feasible_rate": 1.0,
+  "critical_success": 1.0,
+  "spend": 33.875,
+  "score": -0.0
+ },
+ "best_validation_score": -0.0,
+ "opponent_frozen": {
+  "checkpoint_sha_before": "e403066f7410e69e",
+  "checkpoint_sha_after": "e403066f7410e69e",
+  "unchanged": true
+ },
+ "league": {
+  "enabled": false,
+  "manifest": "RUN/arms/pretrained/league.json",
+  "eval_pool_report": "RUN/arms/pretrained/eval_pool.json"
+ },
+ "comparability": {
+  "trainable_role": "defender",
+  "world_hash": "eb5fd09a06240422",
+  "split_hash": "40a031b1a42fa0e9",
+  "catalog_hash": "61d1810d111caf0f",
+  "opponent_checkpoint_id": "b98ec01213a997f7",
+  "league": false,
+  "val_episodes": 2,
+  "seed": 1
+ },
+ "note": "smoke/short budgets are not evidence of policy superiority"
+}

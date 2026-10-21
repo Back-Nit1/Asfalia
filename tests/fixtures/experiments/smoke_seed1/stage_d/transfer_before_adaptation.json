@@ -1,0 +1,953 @@
+{
+ "stage": "D",
+ "world": "hospital12",
+ "frozen": true,
+ "note": "one-seed checkpoints; uncalibrated; not a superiority claim",
+ "provenance": {
+  "world_config": {
+   "role": "shared",
+   "size": 12,
+   "horizon": 20,
+   "difficulty": 0.5,
+   "base_logging": 1
+  },
+  "world_config_path": "configs/experiments/smoke_world.yaml",
+  "world_config_hash": "eb5fd09a06240422",
+  "split": "validation",
+  "split_hash": "40a031b1a42fa0e9",
+  "catalog_hash": "61d1810d111caf0f",
+  "observation_schema_hash": {
+   "attacker": "e91b5533566e1b49",
+   "defender": "2fd2306204baddf4"
+  },
+  "episodes": 2,
+  "eval_seeds": [
+   10000,
+   10001
+  ],
+  "code_revision": "f44a68938e7e8725fdeb4a9bf3dd123697d831fa",
+  "torch": "2.14.1",
+  "actors": {
+   "attacker:b98ec01213a997f7": {
+    "kind": "checkpoint",
+    "path": "RUN/school/attacker/best.pt",
+    "checkpoint_id": "b98ec01213a997f7",
+    "parent_checkpoint_id": null,
+    "training_steps": 128,
+    "config_hash": "c2bd2150bafd12c0",
+    "code_revision": "f44a68938e7e8725fdeb4a9bf3dd123697d831fa",
+    "seed": 1
+   },
+   "ScriptedAttacker": {
+    "kind": "scripted"
+   },
+   "defender:d31102b765787c65": {
+    "kind": "checkpoint",
+    "path": "RUN/school/defender/best.pt",
+    "checkpoint_id": "d31102b765787c65",
+    "parent_checkpoint_id": null,
+    "training_steps": 128,
+    "config_hash": "82c2f928daee85d8",
+    "code_revision": "f44a68938e7e8725fdeb4a9bf3dd123697d831fa",
+    "seed": 1
+   },
+   "GreedyDefender": {
+    "kind": "scripted"
+   },
+   "Noop": {
+    "kind": "scripted"
+   },
+   "StaticHardening": {
+    "kind": "scripted"
+   }
+  }
+ },
+ "split": "validation",
+ "split_hash": "40a031b1a42fa0e9",
+ "catalog_hash": "61d1810d111caf0f",
+ "episodes": 2,
+ "cross_play": {
+  "attackers": [
+   "attacker:b98ec01213a997f7",
+   "ScriptedAttacker"
+  ],
+  "defenders": [
+   "defender:d31102b765787c65",
+   "GreedyDefender",
+   "Noop",
+   "StaticHardening"
+  ],
+  "matrices": {
+   "weighted_exposure_frac": {
+    "rows": "attacker",
+    "cols": "defender",
+    "values": [
+     [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ],
+     [
+      0.5590503246753247,
+      0.0,
+      0.6371753246753247,
+      0.0
+     ]
+    ]
+   },
+   "availability_violation_rate": {
+    "rows": "attacker",
+    "cols": "defender",
+    "values": [
+     [
+      0.5,
+      0.5,
+      0.0,
+      1.0
+     ],
+     [
+      0.5,
+      1.0,
+      0.0,
+      1.0
+     ]
+    ]
+   }
+  }
+ },
+ "matchups": [
+  {
+   "attacker": "attacker:b98ec01213a997f7",
+   "defender": "defender:d31102b765787c65",
+   "overall": {
+    "records_exfiltrated": {
+     "mean": 0.0,
+     "ci95": [
+      0.0,
+      0.0
+     ]
+    },
+    "weighted_exposure_frac": {
+     "mean": 0.0,
+     "ci95": [
+      0.0,
+      0.0
+     ]
+    },
+    "critical_success": {
+     "mean": 0.7769230769230769,
+     "ci95": [
+      0.3396923076923078,
+      1.2141538461538461
+     ]
+    },
+    "noncritical_success": {
+     "mean": 0.8222222222222222,
+     "ci95": [
+      0.5826666666666667,
+      1.0617777777777777
+     ]
+    },
+    "spend": {
+     "mean": 36.0,
+     "ci95": [
+      35.99999999999999,
+      36.00000000000001
+     ]
+    },
+    "added_latency": {
+     "mean": 0.0,
+     "ci95": [
+      0.0,
+      0.0
+     ]
+    },
+    "availability_violation_rate": 0.5,
+    "contained_rate": 0.0,
+    "n": 2
+   },
+   "by_family": {
+    "flat": {
+     "records_exfiltrated": {
+      "mean": 0.0,
+      "ci95": [
+       0.0,
+       0.0
+      ]
+     },
+     "weighted_exposure_frac": {
+      "mean": 0.0,
+      "ci95": [
+       0.0,
+       0.0
+      ]
+     },
+     "critical_success": {
+      "mean": 0.7769230769230769,
+      "ci95": [
+       0.3396923076923078,
+       1.2141538461538461
+      ]
+     },
+     "noncritical_success": {
+      "mean": 0.8222222222222222,
+      "ci95": [
+       0.5826666666666667,
+       1.0617777777777777
+      ]
+     },
+     "spend": {
+      "mean": 36.0,
+      "ci95": [
+       35.99999999999999,
+       36.00000000000001
+      ]
+     },
+     "added_latency": {
+      "mean": 0.0,
+      "ci95": [
+       0.0,
+       0.0
+      ]
+     },
+     "availability_violation_rate": 0.5,
+     "contained_rate": 0.0,
+     "n": 2
+    }
+   },
+   "seeds": [
+    10000,
+    10001
+   ]
+  },
+  {
+   "attacker": "attacker:b98ec01213a997f7",
+   "defender": "GreedyDefender",
+   "overall": {
+    "records_exfiltrated": {
+     "mean": 0.0,
+     "ci95": [
+      0.0,
+      0.0
+     ]
+    },
+    "weighted_exposure_frac": {
+     "mean": 0.0,
+     "ci95": [
+      0.0,
+      0.0
+     ]
+    },
+    "critical_success": {
+     "mean": 0.8307692307692307,
+     "ci95": [
+      0.49907692307692303,
+      1.1624615384615384
+     ]
+    },
+    "noncritical_success": {
+     "mean": 1.0,
+     "ci95": [
+      1.0,
+      1.0
+     ]
+    },
+    "spend": {
+     "mean": 19.1,
+     "ci95": [
+      8.613999999999997,
+      29.586000000000006
+     ]
+    },
+    "added_latency": {
+     "mean": 0.0,
+     "ci95": [
+      0.0,
+      0.0
+     ]
+    },
+    "availability_violation_rate": 0.5,
+    "contained_rate": 0.0,
+    "n": 2
+   },
+   "by_family": {
+    "flat": {
+     "records_exfiltrated": {
+      "mean": 0.0,
+      "ci95": [
+       0.0,
+       0.0
+      ]
+     },
+     "weighted_exposure_frac": {
+      "mean": 0.0,
+      "ci95": [
+       0.0,
+       0.0
+      ]
+     },
+     "critical_success": {
+      "mean": 0.8307692307692307,
+      "ci95": [
+       0.49907692307692303,
+       1.1624615384615384
+      ]
+     },
+     "noncritical_success": {
+      "mean": 1.0,
+      "ci95": [
+       1.0,
+       1.0
+      ]
+     },
+     "spend": {
+      "mean": 19.1,
+      "ci95": [
+       8.613999999999997,
+       29.586000000000006
+      ]
+     },
+     "added_latency": {
+      "mean": 0.0,
+      "ci95": [
+       0.0,
+       0.0
+      ]
+     },
+     "availability_violation_rate": 0.5,
+     "contained_rate": 0.0,
+     "n": 2
+    }
+   },
+   "seeds": [
+    10000,
+    10001
+   ]
+  },
+  {
+   "attacker": "attacker:b98ec01213a997f7",
+   "defender": "Noop",
+   "overall": {
+    "records_exfiltrated": {
+     "mean": 0.0,
+     "ci95": [
+      0.0,
+      0.0
+     ]
+    },
+    "weighted_exposure_frac": {
+     "mean": 0.0,
+     "ci95": [
+      0.0,
+      0.0
+     ]
+    },
+    "critical_success": {
+     "mean": 1.0,
+     "ci95": [
+      1.0,
+      1.0
+     ]
+    },
+    "noncritical_success": {
+     "mean": 1.0,
+     "ci95": [
+      1.0,
+      1.0
+     ]
+    },
+    "spend": {
+     "mean": 0.0,
+     "ci95": [
+      0.0,
+      0.0
+     ]
+    },
+    "added_latency": {
+     "mean": 0.0,
+     "ci95": [
+      0.0,
+      0.0
+     ]
+    },
+    "availability_violation_rate": 0.0,
+    "contained_rate": 0.0,
+    "n": 2
+   },
+   "by_family": {
+    "flat": {
+     "records_exfiltrated": {
+      "mean": 0.0,
+      "ci95": [
+       0.0,
+       0.0
+      ]
+     },
+     "weighted_exposure_frac": {
+      "mean": 0.0,
+      "ci95": [
+       0.0,
+       0.0
+      ]
+     },
+     "critical_success": {
+      "mean": 1.0,
+      "ci95": [
+       1.0,
+       1.0
+      ]
+     },
+     "noncritical_success": {
+      "mean": 1.0,
+      "ci95": [
+       1.0,
+       1.0
+      ]
+     },
+     "spend": {
+      "mean": 0.0,
+      "ci95": [
+       0.0,
+       0.0
+      ]
+     },
+     "added_latency": {
+      "mean": 0.0,
+      "ci95": [
+       0.0,
+       0.0
+      ]
+     },
+     "availability_violation_rate": 0.0,
+     "contained_rate": 0.0,
+     "n": 2
+    }
+   },
+   "seeds": [
+    10000,
+    10001
+   ]
+  },
+  {
+   "attacker": "attacker:b98ec01213a997f7",
+   "defender": "StaticHardening",
+   "overall": {
+    "records_exfiltrated": {
+     "mean": 0.0,
+     "ci95": [
+      0.0,
+      0.0
+     ]
+    },
+    "weighted_exposure_frac": {
+     "mean": 0.0,
+     "ci95": [
+      0.0,
+      0.0
+     ]
+    },
+    "critical_success": {
+     "mean": 0.8992788461538461,
+     "ci95": [
+      0.8856153846153845,
+      0.9129423076923078
+     ]
+    },
+    "noncritical_success": {
+     "mean": 1.0,
+     "ci95": [
+      1.0,
+      1.0
+     ]
+    },
+    "spend": {
+     "mean": 36.0,
+     "ci95": [
+      36.0,
+      36.0
+     ]
+    },
+    "added_latency": {
+     "mean": 0.0,
+     "ci95": [
+      0.0,
+      0.0
+     ]
+    },
+    "availability_violation_rate": 1.0,
+    "contained_rate": 0.0,
+    "n": 2
+   },
+   "by_family": {
+    "flat": {
+     "records_exfiltrated": {
+      "mean": 0.0,
+      "ci95": [
+       0.0,
+       0.0
+      ]
+     },
+     "weighted_exposure_frac": {
+      "mean": 0.0,
+      "ci95": [
+       0.0,
+       0.0
+      ]
+     },
+     "critical_success": {
+      "mean": 0.8992788461538461,
+      "ci95": [
+       0.8856153846153845,
+       0.9129423076923078
+      ]
+     },
+     "noncritical_success": {
+      "mean": 1.0,
+      "ci95": [
+       1.0,
+       1.0
+      ]
+     },
+     "spend": {
+      "mean": 36.0,
+      "ci95": [
+       36.0,
+       36.0
+      ]
+     },
+     "added_latency": {
+      "mean": 0.0,
+      "ci95": [
+       0.0,
+       0.0
+      ]
+     },
+     "availability_violation_rate": 1.0,
+     "contained_rate": 0.0,
+     "n": 2
+    }
+   },
+   "seeds": [
+    10000,
+    10001
+   ]
+  },
+  {
+   "attacker": "ScriptedAttacker",
+   "defender": "defender:d31102b765787c65",
+   "overall": {
+    "records_exfiltrated": {
+     "mean": 8.0,
+     "ci95": [
+      4.08,
+      11.92
+     ]
+    },
+    "weighted_exposure_frac": {
+     "mean": 0.5590503246753247,
+     "ci95": [
+      0.3820616883116884,
+      0.7360389610389609
+     ]
+    },
+    "critical_success": {
+     "mean": 0.7769230769230769,
+     "ci95": [
+      0.3396923076923078,
+      1.2141538461538461
+     ]
+    },
+    "noncritical_success": {
+     "mean": 0.8222222222222222,
+     "ci95": [
+      0.5826666666666667,
+      1.0617777777777777
+     ]
+    },
+    "spend": {
+     "mean": 36.0,
+     "ci95": [
+      35.99999999999999,
+      36.00000000000001
+     ]
+    },
+    "added_latency": {
+     "mean": 0.0,
+     "ci95": [
+      0.0,
+      0.0
+     ]
+    },
+    "availability_violation_rate": 0.5,
+    "contained_rate": 0.0,
+    "n": 2
+   },
+   "by_family": {
+    "flat": {
+     "records_exfiltrated": {
+      "mean": 8.0,
+      "ci95": [
+       4.08,
+       11.92
+      ]
+     },
+     "weighted_exposure_frac": {
+      "mean": 0.5590503246753247,
+      "ci95": [
+       0.3820616883116884,
+       0.7360389610389609
+      ]
+     },
+     "critical_success": {
+      "mean": 0.7769230769230769,
+      "ci95": [
+       0.3396923076923078,
+       1.2141538461538461
+      ]
+     },
+     "noncritical_success": {
+      "mean": 0.8222222222222222,
+      "ci95": [
+       0.5826666666666667,
+       1.0617777777777777
+      ]
+     },
+     "spend": {
+      "mean": 36.0,
+      "ci95": [
+       35.99999999999999,
+       36.00000000000001
+      ]
+     },
+     "added_latency": {
+      "mean": 0.0,
+      "ci95": [
+       0.0,
+       0.0
+      ]
+     },
+     "availability_violation_rate": 0.5,
+     "contained_rate": 0.0,
+     "n": 2
+    }
+   },
+   "seeds": [
+    10000,
+    10001
+   ]
+  },
+  {
+   "attacker": "ScriptedAttacker",
+   "defender": "GreedyDefender",
+   "overall": {
+    "records_exfiltrated": {
+     "mean": 0.0,
+     "ci95": [
+      0.0,
+      0.0
+     ]
+    },
+    "weighted_exposure_frac": {
+     "mean": 0.0,
+     "ci95": [
+      0.0,
+      0.0
+     ]
+    },
+    "critical_success": {
+     "mean": 0.6549879807692307,
+     "ci95": [
+      0.6421490384615384,
+      0.667826923076923
+     ]
+    },
+    "noncritical_success": {
+     "mean": 1.0,
+     "ci95": [
+      1.0,
+      1.0
+     ]
+    },
+    "spend": {
+     "mean": 24.450000000000006,
+     "ci95": [
+      24.450000000000006,
+      24.450000000000006
+     ]
+    },
+    "added_latency": {
+     "mean": 0.0,
+     "ci95": [
+      0.0,
+      0.0
+     ]
+    },
+    "availability_violation_rate": 1.0,
+    "contained_rate": 0.0,
+    "n": 2
+   },
+   "by_family": {
+    "flat": {
+     "records_exfiltrated": {
+      "mean": 0.0,
+      "ci95": [
+       0.0,
+       0.0
+      ]
+     },
+     "weighted_exposure_frac": {
+      "mean": 0.0,
+      "ci95": [
+       0.0,
+       0.0
+      ]
+     },
+     "critical_success": {
+      "mean": 0.6549879807692307,
+      "ci95": [
+       0.6421490384615384,
+       0.667826923076923
+      ]
+     },
+     "noncritical_success": {
+      "mean": 1.0,
+      "ci95": [
+       1.0,
+       1.0
+      ]
+     },
+     "spend": {
+      "mean": 24.450000000000006,
+      "ci95": [
+       24.450000000000006,
+       24.450000000000006
+      ]
+     },
+     "added_latency": {
+      "mean": 0.0,
+      "ci95": [
+       0.0,
+       0.0
+      ]
+     },
+     "availability_violation_rate": 1.0,
+     "contained_rate": 0.0,
+     "n": 2
+    }
+   },
+   "seeds": [
+    10000,
+    10001
+   ]
+  },
+  {
+   "attacker": "ScriptedAttacker",
+   "defender": "Noop",
+   "overall": {
+    "records_exfiltrated": {
+     "mean": 9.0,
+     "ci95": [
+      7.04,
+      10.959999999999999
+     ]
+    },
+    "weighted_exposure_frac": {
+     "mean": 0.6371753246753247,
+     "ci95": [
+      0.6133116883116884,
+      0.661038961038961
+     ]
+    },
+    "critical_success": {
+     "mean": 1.0,
+     "ci95": [
+      1.0,
+      1.0
+     ]
+    },
+    "noncritical_success": {
+     "mean": 1.0,
+     "ci95": [
+      1.0,
+      1.0
+     ]
+    },
+    "spend": {
+     "mean": 0.0,
+     "ci95": [
+      0.0,
+      0.0
+     ]
+    },
+    "added_latency": {
+     "mean": 0.0,
+     "ci95": [
+      0.0,
+      0.0
+     ]
+    },
+    "availability_violation_rate": 0.0,
+    "contained_rate": 0.0,
+    "n": 2
+   },
+   "by_family": {
+    "flat": {
+     "records_exfiltrated": {
+      "mean": 9.0,
+      "ci95": [
+       7.04,
+       10.959999999999999
+      ]
+     },
+     "weighted_exposure_frac": {
+      "mean": 0.6371753246753247,
+      "ci95": [
+       0.6133116883116884,
+       0.661038961038961
+      ]
+     },
+     "critical_success": {
+      "mean": 1.0,
+      "ci95": [
+       1.0,
+       1.0
+      ]
+     },
+     "noncritical_success": {
+      "mean": 1.0,
+      "ci95": [
+       1.0,
+       1.0
+      ]
+     },
+     "spend": {
+      "mean": 0.0,
+      "ci95": [
+       0.0,
+       0.0
+      ]
+     },
+     "added_latency": {
+      "mean": 0.0,
+      "ci95": [
+       0.0,
+       0.0
+      ]
+     },
+     "availability_violation_rate": 0.0,
+     "contained_rate": 0.0,
+     "n": 2
+    }
+   },
+   "seeds": [
+    10000,
+    10001
+   ]
+  },
+  {
+   "attacker": "ScriptedAttacker",
+   "defender": "StaticHardening",
+   "overall": {
+    "records_exfiltrated": {
+     "mean": 0.0,
+     "ci95": [
+      0.0,
+      0.0
+     ]
+    },
+    "weighted_exposure_frac": {
+     "mean": 0.0,
+     "ci95": [
+      0.0,
+      0.0
+     ]
+    },
+    "critical_success": {
+     "mean": 0.8992788461538461,
+     "ci95": [
+      0.8856153846153845,
+      0.9129423076923078
+     ]
+    },
+    "noncritical_success": {
+     "mean": 1.0,
+     "ci95": [
+      1.0,
+      1.0
+     ]
+    },
+    "spend": {
+     "mean": 36.0,
+     "ci95": [
+      36.0,
+      36.0
+     ]
+    },
+    "added_latency": {
+     "mean": 0.0,
+     "ci95": [
+      0.0,
+      0.0
+     ]
+    },
+    "availability_violation_rate": 1.0,
+    "contained_rate": 0.0,
+    "n": 2
+   },
+   "by_family": {
+    "flat": {
+     "records_exfiltrated": {
+      "mean": 0.0,
+      "ci95": [
+       0.0,
+       0.0
+      ]
+     },
+     "weighted_exposure_frac": {
+      "mean": 0.0,
+      "ci95": [
+       0.0,
+       0.0
+      ]
+     },
+     "critical_success": {
+      "mean": 0.8992788461538461,
+      "ci95": [
+       0.8856153846153845,
+       0.9129423076923078
+      ]
+     },
+     "noncritical_success": {
+      "mean": 1.0,
+      "ci95": [
+       1.0,
+       1.0
+      ]
+     },
+     "spend": {
+      "mean": 36.0,
+      "ci95": [
+       36.0,
+       36.0
+      ]
+     },
+     "added_latency": {
+      "mean": 0.0,
+      "ci95": [
+       0.0,
+       0.0
+      ]
+     },
+     "availability_violation_rate": 1.0,
+     "contained_rate": 0.0,
+     "n": 2
+    }
+   },
+   "seeds": [
+    10000,
+    10001
+   ]
+  }
+ ]
+}

@@ -1,0 +1,52 @@
+{
+ "artifact_sha256_untouched_episodes": {
+  "r00001-s10001.jsonl": "521e5f0f46cc0533",
+  "r00001-s10001.manifest.json": "c1da1ef73095c2bd",
+  "r00001-s10001.privileged.json": "306a1bc2ef8ea75c",
+  "r00002-s10002.jsonl": "80c3ae75fe2291b3",
+  "r00002-s10002.manifest.json": "b71e1a0e30cc669e",
+  "r00002-s10002.privileged.json": "cf885f551c09c3ed"
+ },
+ "benchmark_hash": "40982f2f8b8bdb71",
+ "episodes_validated": [
+  {
+   "episode_id": "r00000-s10000",
+   "rows": 20,
+   "steps": 10
+  },
+  {
+   "episode_id": "r00001-s10001",
+   "rows": 20,
+   "steps": 10
+  },
+  {
+   "episode_id": "r00002-s10002",
+   "rows": 20,
+   "steps": 10
+  }
+ ],
+ "privileged_injection": "rejected: row 0: keys differ: extra ['implant'] missing []",
+ "scripted_pair": "ScriptedAttacker x GreedyDefender",
+ "strata": {
+  "test": {
+   "hash": "405129af991b258b",
+   "role": "report_only"
+  },
+  "train": {
+   "hash": "812bffb28b81d278",
+   "role": "train"
+  },
+  "validation": {
+   "hash": "d6ee1fb98a64a4b1",
+   "role": "select"
+  }
+ },
+ "trajectory_version": 2,
+ "world": {
+  "base_logging": 0,
+  "difficulty": 0.5,
+  "horizon": 10,
+  "role": "shared",
+  "size": 12
+ }
+}

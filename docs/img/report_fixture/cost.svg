@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 330" font-family="ui-monospace,Menlo,monospace" font-size="11">
+<rect width="100%" height="100%" fill="#0f1419"/>
+<text x="60" y="20" fill="#e6edf3" font-size="13">Stage D cost (spend) by defender, before adaptation</text>
+<text x="60" y="36" fill="#8b98a5">INSUFFICIENT: 2 seeds < 5; spread and CI are shown but are not a basis for claims</text>
+<text x="8" y="156" fill="#8b98a5" transform="rotate(-90 8 156)" text-anchor="middle">spend (lower better)</text>
+<line x1="60" y1="260" x2="750" y2="260" stroke="#2a3441"/>
+<text x="54" y="264.0" fill="#8b98a5" text-anchor="end">0.00</text>
+<text x="54" y="212.0" fill="#8b98a5" text-anchor="end">10.35</text>
+<text x="54" y="160.0" fill="#8b98a5" text-anchor="end">20.70</text>
+<text x="54" y="108.0" fill="#8b98a5" text-anchor="end">31.05</text>
+<text x="54" y="56.0" fill="#8b98a5" text-anchor="end">41.40</text>
+<text x="145.0" y="276" fill="#e6edf3" text-anchor="middle">GreedyDefender</text>
+<rect x="85.5" y="137.2" width="53.5" height="122.8" fill="#4fb3d9" opacity="0.55"/>
+<circle cx="110.3" cy="137.2" r="2.5" fill="#e6edf3"/>
+<circle cx="114.3" cy="137.2" r="2.5" fill="#e6edf3"/>
+<rect x="145.0" y="164.0" width="53.5" height="96.0" fill="#e3c36e" opacity="0.55"/>
+<circle cx="169.8" cy="164.0" r="2.5" fill="#e6edf3"/>
+<circle cx="173.8" cy="164.0" r="2.5" fill="#e6edf3"/>
+<text x="315.0" y="276" fill="#e6edf3" text-anchor="middle">Noop</text>
+<rect x="255.5" y="260.0" width="53.5" height="0.0" fill="#4fb3d9" opacity="0.55"/>
+<circle cx="280.3" cy="260.0" r="2.5" fill="#e6edf3"/>
+<circle cx="284.3" cy="260.0" r="2.5" fill="#e6edf3"/>
+<rect x="315.0" y="260.0" width="53.5" height="0.0" fill="#e3c36e" opacity="0.55"/>
+<circle cx="339.8" cy="260.0" r="2.5" fill="#e6edf3"/>
+<circle cx="343.8" cy="260.0" r="2.5" fill="#e6edf3"/>
+<text x="485.0" y="276" fill="#e6edf3" text-anchor="middle">StaticHardening</text>
+<rect x="425.5" y="79.1" width="53.5" height="180.9" fill="#4fb3d9" opacity="0.55"/>
+<circle cx="450.3" cy="79.1" r="2.5" fill="#e6edf3"/>
+<circle cx="454.3" cy="79.1" r="2.5" fill="#e6edf3"/>
+<rect x="485.0" y="79.1" width="53.5" height="180.9" fill="#e3c36e" opacity="0.55"/>
+<circle cx="509.8" cy="79.1" r="2.5" fill="#e6edf3"/>
+<circle cx="513.8" cy="79.1" r="2.5" fill="#e6edf3"/>
+<text x="655.0" y="276" fill="#e6edf3" text-anchor="middle">learned_defender</text>
+<rect x="595.5" y="79.1" width="53.5" height="180.9" fill="#4fb3d9" opacity="0.55"/>
+<circle cx="620.3" cy="79.1" r="2.5" fill="#e6edf3"/>
+<circle cx="624.3" cy="79.1" r="2.5" fill="#e6edf3"/>
+<rect x="655.0" y="79.1" width="53.5" height="180.9" fill="#e3c36e" opacity="0.55"/>
+<circle cx="679.8" cy="79.1" r="2.5" fill="#e6edf3"/>
+<circle cx="683.8" cy="79.1" r="2.5" fill="#e6edf3"/>
+<rect x="60" y="302" width="10" height="10" fill="#4fb3d9"/><text x="74" y="311" fill="#e6edf3">vs ScriptedAttacker</text>
+<rect x="250" y="302" width="10" height="10" fill="#e3c36e"/><text x="264" y="311" fill="#e6edf3">vs learned_attacker</text>
+</svg>

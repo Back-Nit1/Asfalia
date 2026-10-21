@@ -1,0 +1,142 @@
+{
+ "name": "smoke",
+ "config_hash": "732dd881fb96a418",
+ "code_revision": "f44a68938e7e8725fdeb4a9bf3dd123697d831fa",
+ "checkpoints": {
+  "attacker": "RUN/school/attacker/best.pt",
+  "defender": "RUN/school/defender/best.pt"
+ },
+ "school_env_steps": {
+  "attacker": 128,
+  "defender": 128
+ },
+ "stage_d_before": "RUN/stage_d/transfer_before_adaptation.json",
+ "arms": {
+  "pretrained": "RUN/arms/pretrained/adapt_manifest.json",
+  "scratch_same_adapt": "RUN/arms/scratch_same_adapt/adapt_manifest.json",
+  "scratch_equal_total": "RUN/arms/scratch_equal_total/adapt_manifest.json"
+ },
+ "comparisons": [
+  {
+   "pair": [
+    "pretrained",
+    "scratch_same_adapt"
+   ],
+   "rule": "equal_adapt",
+   "budget_key": "adapt_env_steps",
+   "budget": 128,
+   "comparability": {
+    "trainable_role": "defender",
+    "world_hash": "eb5fd09a06240422",
+    "split_hash": "40a031b1a42fa0e9",
+    "catalog_hash": "61d1810d111caf0f",
+    "opponent_checkpoint_id": "b98ec01213a997f7",
+    "league": false,
+    "val_episodes": 2,
+    "seed": 1
+   },
+   "runs": [
+    {
+     "init": "pretrained",
+     "best_checkpoint": "75bd801d8246e7a1",
+     "budget": {
+      "requested_adapt_steps": 128,
+      "adapt_env_steps": 128,
+      "pretrain_env_steps": 128,
+      "total_env_steps": 256
+     },
+     "best_validation_score": -0.0,
+     "last_validation": {
+      "success": 1.0,
+      "exposure": 0.0,
+      "feasible_rate": 1.0,
+      "critical_success": 1.0,
+      "spend": 33.875,
+      "score": -0.0
+     }
+    },
+    {
+     "init": "scratch",
+     "best_checkpoint": "0e7db26eba74b4c6",
+     "budget": {
+      "requested_adapt_steps": 128,
+      "adapt_env_steps": 128,
+      "pretrain_env_steps": 0,
+      "total_env_steps": 128
+     },
+     "best_validation_score": -0.0,
+     "last_validation": {
+      "success": 1.0,
+      "exposure": 0.0,
+      "feasible_rate": 1.0,
+      "critical_success": 1.0,
+      "spend": 33.875,
+      "score": -0.0
+     }
+    }
+   ],
+   "note": "validation split, single seed, uncalibrated rewards: descriptive only, no superiority claim"
+  },
+  {
+   "pair": [
+    "pretrained",
+    "scratch_equal_total"
+   ],
+   "rule": "equal_total",
+   "budget_key": "total_env_steps",
+   "budget": 256,
+   "comparability": {
+    "trainable_role": "defender",
+    "world_hash": "eb5fd09a06240422",
+    "split_hash": "40a031b1a42fa0e9",
+    "catalog_hash": "61d1810d111caf0f",
+    "opponent_checkpoint_id": "b98ec01213a997f7",
+    "league": false,
+    "val_episodes": 2,
+    "seed": 1
+   },
+   "runs": [
+    {
+     "init": "pretrained",
+     "best_checkpoint": "75bd801d8246e7a1",
+     "budget": {
+      "requested_adapt_steps": 128,
+      "adapt_env_steps": 128,
+      "pretrain_env_steps": 128,
+      "total_env_steps": 256
+     },
+     "best_validation_score": -0.0,
+     "last_validation": {
+      "success": 1.0,
+      "exposure": 0.0,
+      "feasible_rate": 1.0,
+      "critical_success": 1.0,
+      "spend": 33.875,
+      "score": -0.0
+     }
+    },
+    {
+     "init": "scratch",
+     "best_checkpoint": "0e7db26eba74b4c6",
+     "budget": {
+      "requested_adapt_steps": 256,
+      "adapt_env_steps": 256,
+      "pretrain_env_steps": 0,
+      "total_env_steps": 256
+     },
+     "best_validation_score": -0.0,
+     "last_validation": {
+      "success": 1.0,
+      "exposure": 0.0,
+      "feasible_rate": 1.0,
+      "critical_success": 1.0,
+      "spend": 31.75,
+      "score": -0.0
+     }
+    }
+   ],
+   "note": "validation split, single seed, uncalibrated rewards: descriptive only, no superiority claim"
+  }
+ ],
+ "stage_d_after": "RUN/stage_d/transfer_after_adaptation.json"
+}
