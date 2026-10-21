@@ -15,7 +15,9 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest", "httpx"]
+dev = ["pytest", "httpx", "onnx", "onnxruntime"]
+cloud = ["modal"]
+native = ["cmake", "pybind11"]
 
 [project.scripts]
 hospital-rl = "hospital_rl.cli:main"
