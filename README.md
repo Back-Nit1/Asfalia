@@ -243,7 +243,7 @@ detection evaluation only and are never presented as validation of remediation e
 | Masked PPO, atomic checkpoints, league, local + Modal backends, ONNX export (merged from agent B) | implemented; unit-tested; one tiny live Modal smoke; Daytona deferred; native build verified on macOS arm64 only |
 | School training driver (`hospital-rl train`), Stage D `evaluate` | implemented, smoke-run only |
 | Dashboard, API, orchestrator (merged from agent A) | running locally: `python -m hospital_rl.api --port 8000 --episodes-dir runs/episodes`; replays real recorded episodes; live training view not wired |
-| Learned-policy experiments | **none succeeded.** A 60k-step attacker school run learned nothing (0% validation success; scripted attacker gets 90% at level 0). Defender school run finished but is not yet compared to baselines. No transfer result exists |
+| Learned-policy experiments | **one-seed smoke only.** Attacker school (seed 7, 60k steps, lr 1e-3): 100% validation success at level 0, advanced, 55% at level 1 (scripted attacker: 50% at level 1). With the PPO default lr 3e-4 the same attacker collapsed to waiting (0%); lr is now a CLI flag defaulting to 1e-3. Defender run not yet compared to baselines. No transfer result exists |
 | Synthetic clinical-database testbed | design outline only |
 
 ## 7. Setup and commands

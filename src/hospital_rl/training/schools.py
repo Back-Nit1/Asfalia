@@ -53,7 +53,7 @@ def validate(ckpt: Path, config: str, level: int, n: int, seed: int = 10_000) ->
 
 
 def run_school(role: str, config: str, steps: int, seed: int, out: Path, eval_every: int = 4096,
-               n_val: int = 20, n_envs: int = 8, rollout_len: int = 64, log=print) -> dict:
+               n_val: int = 20, n_envs: int = 8, rollout_len: int = 64, ppo: dict | None = None, log=print) -> dict:
     cfg = load_config(config)
     assert cfg["role"] == role, f"config role {cfg['role']} != --role {role}"
     out.mkdir(parents=True, exist_ok=True)
@@ -71,7 +71,7 @@ def run_school(role: str, config: str, steps: int, seed: int, out: Path, eval_ev
     while done_steps < steps:
         target = min(done_steps + eval_every, steps)
         tcfg = TrainConfig(role=role, seed=seed, total_steps=target, n_envs=n_envs, rollout_len=rollout_len,
-                           checkpoint_every=10 ** 6, env_factory=FACTORY,
+                           checkpoint_every=10 ** 6, env_factory=FACTORY, ppo=ppo or {},
                            env_kwargs={"config": config, "level": cur.index, "split": "train"})
         res = train(tcfg, out, resume=(out / "latest.pt").exists(), log=lambda s: None)
         done_steps = res.env_steps
@@ -103,9 +103,11 @@ def main(argv=None) -> int:
     p.add_argument("--eval-every", type=int, default=4096)
     p.add_argument("--val-episodes", type=int, default=20)
     p.add_argument("--n-envs", type=int, default=8)
+    p.add_argument("--lr", type=float, default=1e-3, help="PPO lr; 3e-4 collapsed the attacker on seed 7 (see docs)")
+    p.add_argument("--ent-coef", type=float, default=0.01)
     a = p.parse_args(argv)
     r = run_school(a.role, a.config, a.steps, a.seed, Path(a.out or f"runs/{a.role}"), a.eval_every,
-                   a.val_episodes, a.n_envs)
+                   a.val_episodes, a.n_envs, ppo={"lr": a.lr, "ent_coef": a.ent_coef})
     print(json.dumps(r))
     return 0
 
