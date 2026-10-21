@@ -17,7 +17,7 @@ from ..envs.encoding import obs_schema_hash
 from ..envs.single_role import ScriptedOpponent
 from ..evaluation.splits import SPLITS, split_hash
 from ..policies.checkpoint import IncompatibleCheckpointError, _code_revision, load_checkpoint, load_frozen_agent
-from ..policies.scripted import GreedyDefender, Noop, ScriptedAttacker, StaticHardening
+from ..policies.scripted import GreedyDefender, Noop, RandomPolicy, ScriptedAttacker, StaticHardening
 from ..runner import summarize
 from ..schemas import catalog_hash
 from ..training.league import cross_play
@@ -26,7 +26,8 @@ from ..training.world import WorldConfig, WorldConfigError, load_world, world_pe
 KEYS = ("records_exfiltrated", "weighted_exposure_frac", "critical_success", "noncritical_success", "spend",
         "added_latency")
 SCRIPTED = {"ScriptedAttacker": ScriptedAttacker, "GreedyDefender": GreedyDefender, "Noop": Noop,
-            "StaticHardening": StaticHardening}
+            "StaticHardening": StaticHardening,
+            "RandomPolicy": RandomPolicy}
 
 
 class CheckpointError(ValueError):
