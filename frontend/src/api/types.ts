@@ -40,3 +40,31 @@ export interface Replay {
   episode_id: string; label: string; scenario: string; topology_exported: boolean; perspective: Perspective;
   privileged: boolean; frames: Frame[]; edges?: Edge[]; final_metrics?: Record<string, number | boolean | null>; notice?: string;
 }
+
+export interface Caps { total_steps: number; timeout_s: number; grace_s: number; cpu: number; memory_mb: number; max_containers: number }
+export interface Estimate { steps_per_sec: number | null; seconds: number | null; basis: "measured" | "unavailable"; measured_at: number | null; note: string }
+export interface Resolved { preset: string; role: string; seed: number; train_config: Record<string, unknown>; caps: Caps; estimate: Estimate; warnings: string[] }
+export interface Attempt {
+  attempt_id: string; n: number; job_id: string | null; job_state: string | null; resume_from: string | null; resume_checkpoint: string | null;
+  started_at: number | null; ended_at: number | null; error: string | null; cleaned_at: number | null;
+}
+export interface MetricRow { env_steps: number; mean_return: number | null; policy_version: number; [k: string]: unknown }
+export interface Run {
+  id: string; owner: string; preset: string; state: string; backend: string; resolved: Resolved; created_at: number; updated_at: number;
+  error: string | null; heartbeat_age_s: number | null; stale: boolean; resumable: boolean; backend_error: string | null;
+  artifact_problems: string[]; attempts: Attempt[]; latest_metric: MetricRow | null;
+}
+export interface Checkpoint {
+  id: string; run_id: string; attempt_id: string; name: string; path: string; sha256: string; size: number; env_steps: number | null;
+  policy_version: number | null; parent_id: string | null; role: string; meta: Record<string, unknown>; available: number;
+}
+export interface Pair { attacker: string; defender: string; metric: string; mean: number; ci_low: number; ci_high: number; n: number }
+export interface Evaluation {
+  id: string; run_id: string | null; suite: string; debug: boolean; label: string | null; state: string; error: string | null; actor: string;
+  spec: { attacker_checkpoint_id: string; defender_checkpoint_id: string; episodes: number; frozen: boolean };
+  result: { pairs: Pair[]; episode_ids: string[]; evaluator: string; note?: string } | null;
+}
+export interface ExpConfig {
+  configured: boolean; backend: string; evaluator: string | null; presets: Record<string, { role: string; total_steps: number }>;
+  ceilings: Record<string, number>; suites: string[]; max_eval_episodes: number; stale_after_s: number;
+}

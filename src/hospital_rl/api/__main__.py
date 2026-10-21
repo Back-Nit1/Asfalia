@@ -27,6 +27,9 @@ def main(argv: list[str] | None = None) -> None:
     p.add_argument("--run-scheduler", action="store_true", help="tick the scheduler in this process")
     p.add_argument("--no-agent", action="store_true", help="never start the coding runtime (human-owned tasks only)")
     p.add_argument("--stream-interval", type=float, default=0.25, help="SSE poll seconds (0.2-0.5 => 2-5 Hz)")
+    p.add_argument("--experiments-root", default=None, help="enable the experiment controller; job artifacts live here")
+    p.add_argument("--fake-backend", action="store_true", help="with --experiments-root: deterministic FAKE backend+evaluator (no training)")
+    p.add_argument("--tick-seconds", type=float, default=2.0)
     p.add_argument("--static-dir", default="frontend/dist")
     a = p.parse_args(argv)
     auth = AuthConfig.for_bind(a.host, os.environ.get("HOSPITAL_RL_OPERATOR_TOKEN"), os.environ.get("HOSPITAL_RL_EVALUATOR_TOKEN"))
@@ -34,7 +37,21 @@ def main(argv: list[str] | None = None) -> None:
     store = Store(a.db)
     cfg, tasks = load_plan(a.plan) if a.plan else (PlanConfig(), [])
     sched = Scheduler(store, cfg, tasks, None if a.no_agent else default_adapter())
-    app = create_app(store, sched, auth, Library(FIXTURES, *map(Path, a.episodes_dir)), a.stream_interval, a.static_dir, a.run_scheduler)
+    controller, eps = None, list(map(Path, a.episodes_dir))
+    if a.experiments_root:
+        from ..experiments.controller import Controller
+        from ..experiments.reader import FsReader
+        root = Path(a.experiments_root)
+        eps.append(root / "episodes")
+        if a.fake_backend:
+            from ..experiments.fakes import FakeBackend, FakeEvaluator
+            backend, evaluator = FakeBackend(root / "jobs"), FakeEvaluator(FIXTURES / "fixture_tiny_episode.json")
+        else:
+            from ..infra.local_backend import LocalBackend
+            backend, evaluator = LocalBackend(root / "jobs"), None     # no evaluation backend wired yet: submissions are refused honestly
+        controller = Controller(store, backend, FsReader(root / "jobs"), evaluator=evaluator, episodes_dir=str(root / "episodes"))
+    app = create_app(store, sched, auth, Library(FIXTURES, *eps), a.stream_interval, a.static_dir, a.run_scheduler,
+                     tick_seconds=a.tick_seconds, controller=controller)
     uvicorn.run(app, host=a.host, port=a.port)
 
 

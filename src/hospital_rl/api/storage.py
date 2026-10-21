@@ -92,13 +92,13 @@ class Store:
 
     def events_after(self, cursor: int = 0, *, limit: int = 500, source_kinds: tuple[str, ...] | None = None,
                     visibilities: tuple[str, ...] | None = None, task_id: str | None = None,
-                    episode_id: str | None = None) -> list[tuple[int, EventEnvelope]]:
+                    episode_id: str | None = None, run_id: str | None = None) -> list[tuple[int, EventEnvelope]]:
         where, args = ["cursor > ?"], [cursor]
         for col, vals in (("source_kind", source_kinds), ("visibility", visibilities)):
             if vals is not None:
                 where.append(f"{col} IN ({','.join('?' * len(vals))})")
                 args += list(vals)
-        for col, val in (("task_id", task_id), ("episode_id", episode_id)):
+        for col, val in (("task_id", task_id), ("episode_id", episode_id), ("run_id", run_id)):
             if val is not None:
                 where.append(f"{col} = ?")
                 args.append(val)
