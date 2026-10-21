@@ -31,7 +31,8 @@ class SingleRoleEnv(gym.Env):
         self.opp_role = ROLES_OTHER[role]
         self.observation_space = penv.observation_space(role)
         self.action_space = penv.action_space(role)
-        self.metadata = {**penv.metadata, "role": role}
+        self.metadata = {**penv.metadata, "role": role,
+                         "observation_schema_hash": penv.metadata["observation_schema_hash"][role]}
 
     def reset(self, *, seed=None, options=None):
         super().reset(seed=seed)
@@ -44,3 +45,16 @@ class SingleRoleEnv(gym.Env):
         opp_idx = self.opp(self.penv, self.opp_role)         # chosen from pre-step state, before our action lands
         obs, rew, term, trunc, info = self.penv.step({self.role: int(action), self.opp_role: opp_idx})
         return obs[self.role], rew[self.role], term[self.role], trunc[self.role], info[self.role]
+
+
+class LearnedOpponent:
+    """Frozen learned policy (anything with .reset() and .act(obs)->int, e.g. policies.ppo.FrozenAgent)."""
+
+    def __init__(self, actor):
+        self.actor = actor
+
+    def reset(self):
+        self.actor.reset()
+
+    def __call__(self, penv: HospitalParallelEnv, role: str) -> int:
+        return self.actor.act(penv.last_obs[role])

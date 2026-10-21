@@ -50,7 +50,8 @@ class HospitalParallelEnv(ParallelEnv):
         self.codec = Codec(self.spec.node_ids(), self.episode_seed)
         self.agents = list(ROLES)
         self._hist = {r: [] for r in ROLES}
-        return self._obs(), {r: {} for r in ROLES}
+        self.last_obs = self._obs()                # exposed so frozen learned opponents can read their own obs
+        return self.last_obs, {r: {} for r in ROLES}
 
     def _obs(self):
         return {r: encode_obs(self.world, self.codec, r, self._hist[r]) for r in self.agents}
@@ -67,6 +68,7 @@ class HospitalParallelEnv(ParallelEnv):
         trunc = {r: done for r in ROLES}
         term = {r: False for r in ROLES}
         obs = self._obs()
+        self.last_obs = obs
         if done:
             self.agents = []
         return obs, rew, term, trunc, infos
