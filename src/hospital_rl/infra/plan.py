@@ -11,6 +11,7 @@ import yaml
 from pydantic import BaseModel
 
 from hospital_rl.infra.backend import JobSpec
+from hospital_rl.infra.bundle import resolve, validate
 
 SECRETS = {  # names only; values come from the environment / provider config files at runtime
     "modal": {"env": ["MODAL_TOKEN_ID", "MODAL_TOKEN_SECRET"], "file": ".modal.toml",
@@ -46,7 +47,9 @@ def cloud_plan(backend: str, config_path: str | Path, env=os.environ, home: Path
         raise ValueError(f"config {config_path} is for backend {raw['backend']!r}, not {backend!r}")
     caps = raw.get("caps", {})
     job = JobSpec(run_id="plan", attempt_id="plan", train_config=raw.get("train", {}),
-                  **{k: caps[k] for k in ("timeout_s", "cpu", "memory_mb", "max_containers", "max_retries") if k in caps})
+                  **{k: caps[k] for k in ("timeout_s", "grace_s", "cpu", "memory_mb", "max_containers", "max_retries") if k in caps})
+    if backend != "daytona":  # Daytona configs belong to its own owner; everything else must resolve to a runnable bundle
+        validate(resolve(job))
     steps = job.train_config.get("total_steps", 0)
     core_hours_cap = job.cpu * job.max_containers * (1 + job.max_retries) * job.timeout_s / 3600
     est = {"label": "ESTIMATE - not provider-reported usage; no currency cost is inferred",

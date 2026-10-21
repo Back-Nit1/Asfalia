@@ -79,25 +79,16 @@ Interfaces: `JobBackend` (`submit/status/drain/checkpoint_and_stop/force_cancel`
 - **LocalBackend** (tested): subprocess per attempt, caps = wall timeout (+grace kill), `RLIMIT_CPU`
   (`timeout*cpu + grace`), `OMP_NUM_THREADS`, and `RLIMIT_AS` on Linux only. **macOS does not enforce memory**
   (RLIMIT_AS is ignored there); do not rely on `memory_mb` locally on macOS.
-- **ModalBackend** (logic tested with a fake gateway; `RealModalGateway` smoke-tested live, see below). First mode: one
-  bounded job = vectorized envs + learner. Caps from config are checked before anything launches; submit is idempotent
-  per `(run_id, attempt_id)`. Volume at `/runs`, unique `run/attempt` paths, `vol.commit()` after each checkpoint and
-  after the manifest, `vol.reload()` before each control poll in the container. Modal API verified against docs and
-  the installed SDK (1.6.2): `App.function(serialized, cpu, memory[MiB], timeout, retries, max_containers, volumes,
-  secrets)`, `Function.spawn`, `FunctionCall.get/cancel/from_id`, `Volume.commit/reload/batch_upload`, `App.run`.
-  Findings: `@app.function` must be at global scope unless `serialized=True` (used, because caps come from config);
-  `Volume.reload()` works only inside a running function; a *detached* app left its container alive after the
-  function returned, so the gateway holds a non-detached `app.run()` and stops the app when the call ends/cancels.
-  Consequence: the client process must stay alive for the job's duration (durable state is on the Volume). Not built:
-  second-mode distributed rollout workers, reconciler for orphans, Modal-side retries beyond `modal.Retries`.
+- **ModalBackend**: same `GatewayBackend` as local, over `RealModalGateway`; see [cloud_lifecycle.md](cloud_lifecycle.md)
+  for the bundle, semantics, ephemeral vs deployed modes, packaging, and limits. Not built: second-mode distributed
+  rollout workers.
 - **DaytonaBackend**: **DEFERRED** stub, every method raises `NotImplementedError("DEFERRED ...")`.
 
-### Live Modal smoke (one-seed, tiny)
-`python tests/infra/modal_smoke.py` — caps: 1 CPU, 1 GiB, 120 s, 1 container, 0 retries, 2048 steps, toy env.
-Result (2026-10-20): state `done`, 2048 env steps, ~20-25 s wall, 4 checkpoints + manifest + result on the Volume,
-run directory removed afterwards, app stopped. Not tested live: drain/stop/cancel on Modal, timeout, preemption,
-resume across attempts on Modal, quota errors. Two earlier smoke run directories remain in Volume
-`hospital-rl-smoke-runs` (`smoke-ab7987a6`, `smoke-fbcef79a`) from the runs before the cleanup fix.
+### Live Modal smoke (tiny, opt-in)
+`ASFALIA_LIVE_MODAL=1 PYTHONPATH=src python tests/infra/modal_smoke.py` (real hospital env; done + stop + resume; <= 3 jobs).
+An earlier toy-env smoke (2026-10-20: done, 2048 steps, ~20-25 s) used the pre-refactor gateway and does not validate
+the current one. **The refactored gateway has not been run live.** Leftover Volume runs `smoke-ab7987a6`, `smoke-fbcef79a`
+in `hospital-rl-smoke-runs` predate cleanup and are unowned by any registry (reconcile would report, never delete, them).
 
 ### cloud-plan (dry run, no network, no credentials needed)
 `python -m hospital_rl.infra.plan --backend modal --config configs/cloud_modal.yaml` prints resolved config, hard caps
@@ -142,18 +133,19 @@ Linux/Windows builds: untested. The runner is in-process (no subprocess per acti
 Single run, toy 8-node model; no speedup target is claimed and the python backend remains the default.
 
 ## Tested vs deferred
-Tested: masked PPO, padding invariance, versioned rollouts, checkpoints (atomic/kill/resume/compat), interrupts,
-frozen-opponent adapter (toy), league/curriculum, local backend (done/drain/stop/cancel/timeout/resume), artifacts,
-Modal logic via fake gateway, live tiny Modal smoke, cloud-plan, ONNX + native parity, benchmark script.
-**DEFERRED / UNTESTED**: Daytona; Modal second mode (distributed rollout workers), live Modal control ops and
-preemption; GRU policy/export; reconciler for orphaned resources; GPU; Linux/Windows native builds; the real hospital
-env (only the toy env was used); hosted dashboard endpoints.
+Tested: masked PPO, padding invariance, versioned rollouts, checkpoints, interrupts, league/curriculum, the common
+lifecycle (local subprocess with the real hospital env: done/drain/stop/cancel/timeout/resume/kill-retry; fake
+gateways: every state mapping, restart idempotence, cleanup protections), bundle validation + clean-interpreter import,
+school jobs, cloud-plan, ONNX + native parity. **DEFERRED / UNEXECUTED**: Daytona (Agent H); Modal deployed mode and every
+real-Modal control/timeout/preemption/quota path; Modal distributed rollout workers; learner consumption of pinned
+opponent/normalizer versions; GRU; GPU; Linux/Windows native builds; hosted dashboard endpoints.
 
 ## Cloud school training (`infra/cloud_school.py`)
-Runs the real school driver (curriculum + validation + best.pt) off-device, one container/sandbox per (role, seed), all parallel.
-- Modal: `PYTHONPATH=src modal run -d src/hospital_rl/infra/cloud_school.py --steps 200000 --seeds 7,8,9`, then
-  `modal volume get hospital-rl-school /<tag> runs/cloud-<tag>` (target dir must not exist). Detached; survives the client.
-  Same tag resumes. 2 CPU / 4 GiB per run, 24 h timeout.
-- Daytona: `python -m hospital_rl.infra.cloud_school daytona --steps 50000 --seeds 7,8` (client must stay up; results in `runs/daytona/<tag>`).
-- Verified 2026-10-21: both smoke-tested live (defender, 4096 / 2048 steps, level 0). Not tested: long runs, resume after crash, cost.
-- "Faster" = more seeds/roles in parallel, not a faster single run (SyncVecEnv is single-process).
+Role x seed school driver off-device, one container/sandbox per (role, seed), all parallel.
+- Modal (common lifecycle, one `kind="school"` job per role x seed, run id `<tag>-<role>-s<seed>`):
+  `PYTHONPATH=src python -m hospital_rl.infra.cloud_school modal --steps 200000 --seeds 7,8,9` (ephemeral: keep the process up),
+  `--detach` (deployed app, UNEXECUTED) then `... status --tag <tag>`; fetch with `modal volume get hospital-rl-school /<run> runs/cloud-<run>`.
+  Re-running a tag creates the next attempt, resuming from the previous one. 2 CPU / 4 GiB per run. **Regression to know:**
+  the previous `modal run -d` fan-out survived the client; the default ephemeral mode does not (use `--detach` once verified).
+- Daytona: unchanged: `python -m hospital_rl.infra.cloud_school daytona --steps 50000 --seeds 7,8`.
+- The 2026-10-21 live smokes were of the pre-refactor launcher. "Faster" = more seeds/roles in parallel, not a faster single run.
