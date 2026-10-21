@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import json
 import re
+import threading
 import time
 from functools import wraps
 from typing import Callable, Protocol
@@ -55,13 +56,14 @@ def audited(action: str):
         @wraps(fn)
         def inner(self, *a, actor: str = "operator", **kw):
             target = str(a[0]) if a and isinstance(a[0], str) else None
-            try:
-                out = fn(self, *a, actor=actor, **kw)
-            except Exception as e:
-                self.audit(actor, action, target, "refused", redact(e))
-                raise
-            self.audit(actor, action, target, "ok", "")
-            return out
+            with self.mu:
+                try:
+                    out = fn(self, *a, actor=actor, **kw)
+                except Exception as e:
+                    self.audit(actor, action, target, "refused", redact(e))
+                    raise
+                self.audit(actor, action, target, "ok", "")
+                return out
         return inner
     return deco
 
@@ -70,6 +72,7 @@ class Controller:
     def __init__(self, store, backend: JobBackend, reader: Reader, *, clock: Callable[[], float] = time.time,
                  stale_after: float = 30.0, max_active: int = 1, evaluator: Evaluator | None = None,
                  episodes_dir: str | None = None, on_new_episodes: Callable[[], None] = lambda: None):
+        self.mu = threading.RLock()     # ponytail: one lock for commands + tick; slow remote backends would need per-run locks
         self.store, self.db, self.backend, self.reader, self.clock = store, ExpDb(store), backend, reader, clock
         self.stale_after, self.max_active, self.evaluator = stale_after, max_active, evaluator
         self.episodes_dir, self.on_new_episodes = episodes_dir, on_new_episodes
@@ -236,6 +239,10 @@ class Controller:
 
     # ---------- worker ----------
     def tick(self) -> None:
+        with self.mu:
+            self._tick()
+
+    def _tick(self) -> None:
         for r in self.db.q("SELECT id, state FROM exp_runs WHERE state IN ('queued','starting') ORDER BY n"):
             self._dispatch(r["id"], r["state"])
         for r in self.db.q("SELECT id FROM exp_runs WHERE state IN ('starting','running','draining','checkpointing') ORDER BY n"):
@@ -433,6 +440,18 @@ class Controller:
             except Exception as ex:
                 self.db.update("exp_evals", {"id": eid}, state="failed", error=redact(ex), updated_at=self.clock())
             self.emit("experiment", "controller", "evaluation_finished", e["run_id"], {"eval_id": eid})
+
+    def overview(self) -> dict:
+        runs = self.list()
+        by = {}
+        for r in runs:
+            by[r["state"]] = by.get(r["state"], 0) + 1
+        return {"runs": {"configured": True, "count": len(runs), "by_state": by, "stale": [r["id"] for r in runs if r["stale"]]},
+                "infrastructure": {"configured": True, "backend": self.backend.name}}
+
+    def latest_evaluation(self) -> dict | None:
+        done = [e for e in self.evals() if e["state"] == "done"]
+        return {"id": done[0]["id"], "suite": done[0]["suite"], "result": done[0]["result"]} if done else None
 
     # ---------- infrastructure ----------
     def infrastructure(self) -> dict:

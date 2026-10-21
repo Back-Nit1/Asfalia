@@ -13,6 +13,7 @@ from ..orchestration import integration as git_ops
 from ..orchestration.tasks import IllegalTransition, Status
 from . import dto
 from .auth import require_evaluator, require_operator
+from ..experiments.controller import ConfigError
 from .events import start_cursor, stream
 from .replay import ALLOWED
 
@@ -34,6 +35,8 @@ def idempotent(request: Request, fn: Callable[[], object]) -> JSONResponse:
         out, status = fn(), 200
     except KeyError as e:
         out, status = {"detail": f"not found: {e.args[0]}"}, 404
+    except ConfigError as e:
+        out, status = {"detail": str(e), "errors": e.errors}, 422
     except (IllegalTransition, ValueError) as e:
         out, status = {"detail": str(e)}, 409
     store.idem_put(key, scope, status, out)
@@ -44,7 +47,7 @@ def task_json(t) -> dict:
     return t.model_dump(mode="json")
 
 
-def build_router() -> APIRouter:
+def build_router(controller: bool = False) -> APIRouter:
     r = APIRouter(prefix="/api")
     op = APIRouter(dependencies=[Depends(require_operator)])
 
@@ -68,9 +71,10 @@ def build_router() -> APIRouter:
         tasks = s.scheduler.all()
         counts = {st.value: sum(t.status is st for t in tasks) for st in Status}
         return {"tasks": counts, "task_total": len(tasks), "runtime": s.scheduler.runtime_status(),
-                "runs": {**NOT_CONFIGURED, "count": 0}, "infrastructure": NOT_CONFIGURED,
+                **(request.app.state.controller.overview() if controller else {"runs": {**NOT_CONFIGURED, "count": 0}, "infrastructure": NOT_CONFIGURED}),
                 "stale_running": [t.id for t in tasks if t.status is Status.running and t.lease_expiry and t.lease_expiry < s.scheduler.clock()],
-                "latest_evaluation": None, "step_rate": None, "spend_estimate": None}
+                "latest_evaluation": None, "step_rate": None, "spend_estimate": None} | (
+            {"latest_evaluation": request.app.state.controller.latest_evaluation()} if controller else {})
 
     @op.get("/tasks")
     def tasks(request: Request):
@@ -114,54 +118,59 @@ def build_router() -> APIRouter:
 
     @op.get("/events")
     def events(request: Request, after: int = 0, limit: int = Query(200, le=1000)):
-        rows = request.app.state.store.events_after(after, limit=limit, visibilities=("operator",))
+        rows = request.app.state.store.events_after(after, limit=limit, visibilities=("operator",), source_kinds=("development",))
         return {"events": [{"cursor": c, **json.loads(e.model_dump_json())} for c, e in rows]}
 
     @op.get("/events/stream")
     async def event_stream(request: Request, after: int | None = None, follow: bool = True, task_id: str | None = None):
         s = request.app.state
         gen = stream(request, s.store, start_cursor(request, after), follow=follow, interval=s.stream_interval,
-                     source_kinds=None, visibilities=("operator",), snapshot=lambda: dev_snapshot(request), task_id=task_id)
+                     source_kinds=("development",), visibilities=("operator",), snapshot=lambda: dev_snapshot(request), task_id=task_id)
         return StreamingResponse(gen, media_type="text/event-stream", headers=SSE_HEADERS)
 
-    # ---- honest not-configured surfaces ----
-    @op.get("/runs")
-    def runs(request: Request):
-        rows = request.app.state.store.list_runs()
-        return {**NOT_CONFIGURED, "runs": rows, "message": "no experiment controller is connected; no runs exist"} if not rows else {"configured": True, "runs": rows}
+    if controller:
+        from .experiment_routes import mount
+        mount(op, idempotent, NOT_CONFIGURED)
+    else:
+        # ---- honest not-configured surfaces ----
+        @op.get("/runs")
+        def runs(request: Request):
+            rows = request.app.state.store.list_runs()
+            return {**NOT_CONFIGURED, "runs": rows, "message": "no experiment controller is connected; no runs exist"} if not rows else {"configured": True, "runs": rows}
 
-    @op.post("/runs")
-    @op.post("/runs/{run_id}/cancel")
-    @op.post("/runs/{run_id}/resume")
-    def runs_mutate(request: Request, run_id: str | None = None):
-        return JSONResponse({**NOT_CONFIGURED, "message": "experiment controller not configured"}, 501)
+        @op.post("/runs")
+        @op.post("/runs/{run_id}/cancel")
+        @op.post("/runs/{run_id}/resume")
+        def runs_mutate(request: Request, run_id: str | None = None):
+            return JSONResponse({**NOT_CONFIGURED, "message": "experiment controller not configured"}, 501)
 
-    @op.get("/runs/{run_id}")
-    def run(run_id: str):
-        raise HTTPException(404, "run not found (no experiment controller configured)")
+        @op.get("/runs/{run_id}")
+        def run(run_id: str):
+            raise HTTPException(404, "run not found (no experiment controller configured)")
 
-    @op.get("/checkpoints")
-    def checkpoints():
-        return {**NOT_CONFIGURED, "checkpoints": [], "message": "no training producer connected"}
+        @op.get("/checkpoints")
+        def checkpoints():
+            return {**NOT_CONFIGURED, "checkpoints": [], "message": "no training producer connected"}
 
-    @op.get("/metrics")
-    def metrics(request: Request):
-        tasks = request.app.state.scheduler.all()
-        return {"tasks_by_status": {st.value: sum(t.status is st for t in tasks) for st in Status},
-                "training": NOT_CONFIGURED, "step_rate": None}
+        @op.get("/metrics")
+        def metrics(request: Request):
+            tasks = request.app.state.scheduler.all()
+            return {"tasks_by_status": {st.value: sum(t.status is st for t in tasks) for st in Status},
+                    "training": NOT_CONFIGURED, "step_rate": None}
 
-    @op.get("/infrastructure")
-    def infrastructure():
-        return {**NOT_CONFIGURED, "workers": [], "sandboxes": [], "message": "no Modal/Daytona backend configured"}
+        @op.get("/infrastructure")
+        def infrastructure():
+            return {**NOT_CONFIGURED, "workers": [], "sandboxes": [], "message": "no Modal/Daytona backend configured"}
 
-    @op.post("/infrastructure/drain")
-    @op.post("/infrastructure/cleanup")
-    def infra_mutate():
-        return JSONResponse({**NOT_CONFIGURED, "message": "no infrastructure backend configured"}, 501)
+        @op.post("/infrastructure/drain")
+        @op.post("/infrastructure/cleanup")
+        def infra_mutate():
+            return JSONResponse({**NOT_CONFIGURED, "message": "no infrastructure backend configured"}, 501)
 
     @op.get("/world/episodes")
     def episodes(request: Request):
         lib = request.app.state.library
+        lib.rescan()
         return {"episodes": [{"id": e.id, "label": e.label, "scenario": e.scenario, "seed": e.seed,
                               "ticks": len(e.steps), "topology_exported": e.has_topology} for e in lib.episodes.values()],
                 "live": {**NOT_CONFIGURED, "message": "no live episode producer connected"}}

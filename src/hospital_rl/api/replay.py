@@ -33,7 +33,7 @@ class Episode:
 
 def parse_episode(raw: dict, episode_id: str) -> Episode:
     topo = raw.get("topology") or {}
-    return Episode(id=episode_id, label="FIXTURE" if raw.get("fixture") else "RECORDED", scenario=raw.get("scenario", ""),
+    return Episode(id=episode_id, label="DEBUG" if raw.get("debug") else "FIXTURE" if raw.get("fixture") else "RECORDED", scenario=raw.get("scenario", ""),
                    seed=raw.get("seed"), nodes=topo.get("nodes", []), edges=topo.get("edges", []),
                    steps=raw["steps"], final_metrics=raw.get("metrics", {}), has_topology=bool(topo.get("nodes")))
 
@@ -42,12 +42,19 @@ class Library:
     def __init__(self, *dirs: Path):
         self.episodes: dict[str, Episode] = {}
         self._frames: dict[tuple[str, str], list[dict]] = {}
-        for d in dirs:
-            for p in sorted(Path(d).glob("*.json")):
+        self.dirs = [Path(d) for d in dirs]
+        self.rescan()
+
+    def rescan(self) -> None:
+        """Pick up episode exports written after startup (completed evaluations). Known ids are never replaced."""
+        for d in self.dirs:
+            for p in sorted(d.rglob("*.json")):
+                if p.stem in self.episodes:
+                    continue
                 try:
                     self.episodes[p.stem] = parse_episode(json.loads(p.read_text()), p.stem)
-                except (ValueError, KeyError):
-                    continue    # not an episode export
+                except (ValueError, KeyError, OSError):
+                    continue    # not an episode export (or still being written)
 
     def frames(self, ep: Episode, perspective: str) -> list[dict]:
         key = (ep.id, perspective)

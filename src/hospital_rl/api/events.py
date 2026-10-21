@@ -26,7 +26,8 @@ def start_cursor(request: Request, after: int | None) -> int:
 
 async def stream(request: Request, store: Store, cursor: int, *, follow: bool, interval: float,
                  source_kinds: tuple[str, ...] | None, visibilities: tuple[str, ...] | None,
-                 snapshot: Callable[[], dict], task_id: str | None = None) -> AsyncIterator[str]:
+                 snapshot: Callable[[], dict], task_id: str | None = None,
+                 run_id: str | None = None) -> AsyncIterator[str]:
     yield "retry: 1000\n\n"
     if cursor < store.pruned_through():     # events the client missed are gone: send current state instead
         snap = snapshot()
@@ -35,7 +36,7 @@ async def stream(request: Request, store: Store, cursor: int, *, follow: bool, i
     idle = 0.0
     while not await request.is_disconnected():
         rows = await asyncio.to_thread(store.events_after, cursor, limit=BATCH, source_kinds=source_kinds,
-                                       visibilities=visibilities, task_id=task_id)
+                                       visibilities=visibilities, task_id=task_id, run_id=run_id)
         for cur, ev in rows:
             cursor = cur
             yield frame("envelope", json.loads(ev.model_dump_json()), cur)
