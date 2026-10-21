@@ -148,3 +148,12 @@ Modal logic via fake gateway, live tiny Modal smoke, cloud-plan, ONNX + native p
 **DEFERRED / UNTESTED**: Daytona; Modal second mode (distributed rollout workers), live Modal control ops and
 preemption; GRU policy/export; reconciler for orphaned resources; GPU; Linux/Windows native builds; the real hospital
 env (only the toy env was used); hosted dashboard endpoints.
+
+## Cloud school training (`infra/cloud_school.py`)
+Runs the real school driver (curriculum + validation + best.pt) off-device, one container/sandbox per (role, seed), all parallel.
+- Modal: `PYTHONPATH=src modal run -d src/hospital_rl/infra/cloud_school.py --steps 200000 --seeds 7,8,9`, then
+  `modal volume get hospital-rl-school /<tag> runs/cloud-<tag>` (target dir must not exist). Detached; survives the client.
+  Same tag resumes. 2 CPU / 4 GiB per run, 24 h timeout.
+- Daytona: `python -m hospital_rl.infra.cloud_school daytona --steps 50000 --seeds 7,8` (client must stay up; results in `runs/daytona/<tag>`).
+- Verified 2026-10-21: both smoke-tested live (defender, 4096 / 2048 steps, level 0). Not tested: long runs, resume after crash, cost.
+- "Faster" = more seeds/roles in parallel, not a faster single run (SyncVecEnv is single-process).

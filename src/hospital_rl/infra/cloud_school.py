@@ -55,7 +55,7 @@ if modal:
                 for r in roles.split(",") for s in seeds.split(",")]
         for j in jobs:
             print(f"spawned {j['role']} seed={j['seed']} call={school.spawn(j).object_id}")
-        print(f"tag={tag}  fetch: modal volume get hospital-rl-school /{tag} runs/cloud-<tag>
+        print(f"tag={tag}  fetch: modal volume get hospital-rl-school /{tag} runs/cloud-{tag}")
 
 
 def _bundle() -> bytes:
