@@ -176,7 +176,10 @@ def report(att_ckpt: str, def_ckpt: str, world_path: str, split: str, n: int,
 
 
 def main(argv=None) -> int:
-    p = argparse.ArgumentParser(prog="hospital-rl evaluate")
+    p = argparse.ArgumentParser(prog="hospital-rl evaluate", description=(
+        "Stage D: frozen attacker/defender checkpoints plus scripted baselines, every pairing, in the shared "
+        "world. Writes a machine-readable report (cross-play matrices, per-pair metrics, provenance). "
+        "Exit 0: report produced; exit 2: missing/unreadable/incompatible checkpoint or invalid world config."))
     p.add_argument("--config", default="configs/hospital40.yaml", help="shared-world YAML (all fields honored)")
     p.add_argument("--attacker-checkpoint", required=True)
     p.add_argument("--defender-checkpoint", required=True)

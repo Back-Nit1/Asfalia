@@ -111,7 +111,10 @@ def run_school(role: str, config: str, steps: int, seed: int, out: Path, eval_ev
 
 
 def main(argv=None) -> int:
-    p = argparse.ArgumentParser(prog="hospital-rl train")
+    p = argparse.ArgumentParser(prog="hospital-rl train", description=(
+        "Stage A-C school training for one role with validation-gated curriculum and best.pt selection. Re-running "
+        "with the same --out resumes; a different role/config/seed on an existing --out is refused. "
+        "Exit 0: finished; exit 2: --out belongs to a different run."))
     p.add_argument("--role", required=True, choices=["attacker", "defender"])
     p.add_argument("--config", required=True)
     p.add_argument("--steps", type=int, default=100_000)
