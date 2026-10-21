@@ -60,13 +60,14 @@ def run_school(role: str, config: str, steps: int, seed: int, out: Path, eval_ev
     adv = cfg.get("advance_on", {})
     cur = Curriculum([str(i) for i in range(len(cfg["levels"]))], threshold=adv.get("threshold", 0.8), window=2)
     state_f, best_f = out / "school_state.json", out / "best_score.json"
-    done_steps, best = 0, -1e9
+    done_steps, best = 0, (-1, -1e9)
     if state_f.exists():
         st = json.loads(state_f.read_text())
         cur.load_state_dict(st["curriculum"])
         done_steps = st["steps"]
     if best_f.exists():
-        best = json.loads(best_f.read_text())["score"]
+        b = json.loads(best_f.read_text())
+        best = (b["level"], b["score"])
     while done_steps < steps:
         target = min(done_steps + eval_every, steps)
         tcfg = TrainConfig(role=role, seed=seed, total_steps=target, n_envs=n_envs, rollout_len=rollout_len,
@@ -76,11 +77,12 @@ def run_school(role: str, config: str, steps: int, seed: int, out: Path, eval_ev
         done_steps = res.env_steps
         v = validate(out / "latest.pt", config, cur.index, n_val)
         advanced = cur.report(v["success"])
-        if v["score"] > best:
-            best = v["score"]
+        key = (v["level"], v["score"])                   # prefer the hardest level reached, then validation score
+        if key > best:
+            best = key
             shutil.copy(out / "latest.pt", out / "best.pt")
             shutil.copy(out / "latest.pt.meta.json", out / "best.pt.meta.json")
-            best_f.write_text(json.dumps({"score": best, "steps": done_steps, "level": v["level"]}))
+            best_f.write_text(json.dumps({"score": v["score"], "steps": done_steps, "level": v["level"]}))
         row = {"env_steps": done_steps, "train_mean_return": res.history[-1]["mean_return"] if res.history else None,
                "validation": v, "advanced": advanced, "curriculum_level": cur.index}
         with open(out / "metrics.jsonl", "a") as f:
@@ -88,7 +90,7 @@ def run_school(role: str, config: str, steps: int, seed: int, out: Path, eval_ev
         state_f.write_text(json.dumps({"curriculum": cur.state_dict(), "steps": done_steps}))
         log(f"steps={done_steps} level={v['level']} val_success={v['success']:.2f} exposure={v['exposure']:.3f} "
             f"crit={v['critical_success']:.3f} score={v['score']:.3f}{' ADVANCE' if advanced else ''}")
-    return {"steps": done_steps, "best": str(out / "best.pt"), "best_score": best, "level": cur.index}
+    return {"steps": done_steps, "best": str(out / "best.pt"), "best_score": best[1], "level": cur.index}
 
 
 def main(argv=None) -> int:
