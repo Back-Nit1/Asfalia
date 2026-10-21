@@ -13,7 +13,7 @@ PYTHONPATH=src python -m hospital_rl.orchestration --dry-run
 
 Flags: `--db` (SQLite WAL file), `--episodes-dir` (extra episode JSON exports), `--no-agent` (never start the coding
 runtime), `--stream-interval` (SSE poll seconds, 0.2–0.5 = 2–5 Hz; UI also takes `?hz=` and `?mhz=`).
-The lead's `hospital-rl dashboard|orchestrate` stubs should call these entry points (see `docs/requests/agent-A.md`).
+`hospital-rl dashboard` and `hospital-rl orchestrate` delegate to these real entry points and preserve their help/exit behavior.
 
 ## Security model
 
@@ -58,8 +58,8 @@ Without a `claude` binary the UI says "coding runtime not configured"; human-own
 ## Experiment control plane (Agent D)
 
 ```bash
-# real local jobs (infra.local_backend.LocalBackend, one subprocess per attempt); no evaluator is wired, so evaluations are refused
-PYTHONPATH=src python -m hospital_rl.api --experiments-root runs/exp --run-scheduler
+# real local jobs plus frozen learned-pair evaluation and replay export
+hospital-rl dashboard --experiments-root runs/exp --world-config configs/hospital40.yaml --evaluation-split validation
 # deterministic FAKE backend + evaluator (UI/e2e/dev only; every surface says "fake")
 PYTHONPATH=src python -m hospital_rl.api --experiments-root runs/exp --fake-backend --tick-seconds 0.4
 ```
@@ -113,5 +113,7 @@ cross-play matrix, failed-evaluation/compatibility errors, replay links), Infras
 cleanup dry run → delete), Artifacts (checkpoint lineage + hashes, per-attempt manifest state). Loading, empty, stale ("disconnected,
 showing last known data") and partial-artifact states are explicit text; nothing animates a counter.
 
-**Known gaps.** The current trainer does not write `metrics.jsonl`/`episodes.jsonl` (requests/agent-D.md), so a real local run shows
-checkpoints and a result but "No metrics have been written". No real evaluator is wired. Fake-backend e2e proves the workflow, not training.
+**Known gaps.** Debug forks have no real counterfactual evaluator yet and fail explicitly outside fake-development mode.
+The real evaluator runs one frozen learned pair; the richer CLI Stage D report adds scripted baselines and cross-play.
+Fake-backend e2e proves UI/controller behavior, while backend and evaluator tests plus the bounded release smoke cover
+the real local training/evaluation path. Live provider execution remains separate and opt-in.

@@ -6,10 +6,10 @@
 |---|---|
 | benchmark strata + hash, test-stratum guard | `hospital_rl.evaluation.strata` (`benchmark_hash`, `require_trainable`, `check_training_config`) |
 | objective metrics (censored recovery/containment, attacker success, downtime, benign false positives, constraint violations) | `hospital_rl.evaluation.metrics`; `evaluation.benchmark.run` rows now carry `objectives` |
-| trajectory export from real evaluation | `python -m hospital_rl.data.trajectory export --attacker-checkpoint A --defender-checkpoint D --out DIR` (or `evaluate_pair(..., sink=TrajectoryWriter(...))`) |
-| trajectory validation | `python -m hospital_rl.data.trajectory validate DIR` |
-| ablations | `python -m hospital_rl.evaluation.ablations list|write|check` (configs in `configs/experiments/ablations/`) |
-| report from stored experiment dirs | `python -m hospital_rl.reporting.report --runs RUN_DIR... --out OUT` |
+| trajectory export from real evaluation | `hospital-rl export-trajectories --attacker-checkpoint A --defender-checkpoint D --out DIR` (or `evaluate_pair(..., sink=TrajectoryWriter(...))`) |
+| trajectory validation | `hospital-rl validate-trajectories DIR` |
+| ablations | `hospital-rl ablations list|write|check` (configs in `configs/experiments/ablations/`) |
+| report from stored experiment dirs | `hospital-rl report --runs RUN_DIR... --out OUT` |
 | evidence regeneration | `PYTHONPATH=src python scripts/eval_evidence.py` (writes `docs/img/report_fixture/`, `docs/img/trajectory_validation.json`) |
 | MITRE labels, limits | `docs/mitre_mapping.md`, `docs/related_systems_and_limits.md` |
 

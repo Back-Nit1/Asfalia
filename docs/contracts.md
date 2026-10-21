@@ -22,5 +22,7 @@ workflows; recurring costs (hard budget cap; unfunded recurring controls lapse);
 Rewards are uncalibrated (`engine/rewards.py`). Defender reward terms are all <= 0.
 
 ## Episode record
-`runner.run_episode(spec, seed, attacker, defender, record=True)` -> dict with `steps`, `metrics`, `rows` (actor-visible
-decision rows) and `privileged` (evaluator truth). `data.trajectory.export` writes them to separate files.
+`runner.run_episode(..., record=True)` remains a compact debugging record. The evaluation data contract is trajectory
+version 2, written by `data.trajectory.TrajectoryWriter` (also accepted as the `sink` for
+`evaluation.transfer.play/evaluate_pair`). Each episode has actor-visible JSONL, a separate evaluator-privileged JSON
+file, and a hash manifest covering policy/normalizer/config/split identities. See `docs/evaluation.md`.
