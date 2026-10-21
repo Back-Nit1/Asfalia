@@ -1,0 +1,41 @@
+{
+ "host": {
+  "platform": "macOS-26.4-arm64-arm-64bit-Mach-O",
+  "logical_cores": 12,
+  "torch_threads": 8,
+  "torch": "2.14.1"
+ },
+ "assumptions": "same total steps/seed/policy init per arm; collection only; SyncVecEnv is single-process",
+ "arms": [
+  {
+   "arm": "single",
+   "n_envs": 1,
+   "env_steps": 8192,
+   "rollout_len": 32,
+   "startup_s": 0.003,
+   "rollout_wall_s": 4.159,
+   "steps_per_s": 1969.7,
+   "cpu_utilisation": 1.0
+  },
+  {
+   "arm": "vec4",
+   "n_envs": 4,
+   "env_steps": 8192,
+   "rollout_len": 32,
+   "startup_s": 0.001,
+   "rollout_wall_s": 2.802,
+   "steps_per_s": 2924.1,
+   "cpu_utilisation": 1.06
+  },
+  {
+   "arm": "vec8",
+   "n_envs": 8,
+   "env_steps": 8192,
+   "rollout_len": 32,
+   "startup_s": 0.002,
+   "rollout_wall_s": 2.684,
+   "steps_per_s": 3052.5,
+   "cpu_utilisation": 1.08
+  }
+ ]
+}
