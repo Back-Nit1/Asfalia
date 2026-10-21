@@ -1,0 +1,17 @@
+# Bounded CPU smoke: real school envs + real shared hospital world, one-side adaptation only.
+name: smoke
+world_config: configs/experiments/smoke_world.yaml
+seed: 7
+trainable_role: defender
+league: "off"
+school:
+  attacker_config: configs/attacker_school.yaml
+  defender_config: configs/defender_school.yaml
+  steps: 128
+  eval_every: 128
+  val_episodes: 2
+  n_envs: 2
+  rollout_len: 32
+adapt: {steps: 128, eval_every: 128, val_episodes: 2, n_envs: 2, rollout_len: 32}
+transfer: {split: validation, episodes: 2}
+arms: [pretrained, scratch_same_adapt, scratch_equal_total]

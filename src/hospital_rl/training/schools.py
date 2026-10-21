@@ -7,17 +7,19 @@ from __future__ import annotations
 import argparse
 import json
 import shutil
+import sys
 from pathlib import Path
 
 import numpy as np
 
 from ..envs.curricula import load_config
 from ..envs.factories import school_env
-from ..policies.checkpoint import load_frozen_agent
+from ..policies.checkpoint import load_checkpoint, load_frozen_agent
 from ..runner import summarize
 from ..schemas import catalog_hash
 from ..envs.encoding import obs_schema_hash
 from .curriculum import Curriculum
+from .lineage import LineageError, claim_run
 from .train import TrainConfig, train
 
 FACTORY = "hospital_rl.envs.factories:school_env"
@@ -38,6 +40,11 @@ def validate(ckpt: Path, config: str, level: int, n: int, seed: int = 10_000) ->
             obs, _, te, tr, _ = env.step(actor.act(obs))
             done = te or tr
         rows.append(summarize(env.penv.world))
+    return {"level": level, "n": n, **score_rows(role, rows)}
+
+
+def score_rows(role: str, rows: list[dict]) -> dict:
+    """Unshaped validation metrics from `summarize` rows; `score` is the checkpoint-selection key."""
     exp = float(np.mean([r["weighted_exposure_frac"] for r in rows]))
     feas = float(np.mean([not r["availability_violation"] for r in rows]))
     if role == "attacker":
@@ -47,16 +54,26 @@ def validate(ckpt: Path, config: str, level: int, n: int, seed: int = 10_000) ->
         success = float(np.mean([(not r["availability_violation"]) and r["weighted_exposure_frac"] <= 0.25
                                  for r in rows]))
         score = -exp - (1.0 - feas)                       # infeasible policies are penalized, not averaged away
-    return {"level": level, "n": n, "success": success, "exposure": exp, "feasible_rate": feas,
+    return {"success": success, "exposure": exp, "feasible_rate": feas,
             "critical_success": float(np.mean([r["critical_success"] for r in rows])),
             "spend": float(np.mean([r["spend"] for r in rows])), "score": score}
+
+
+def _legacy_ok(out: Path, role: str, seed: int) -> bool:
+    """Pre-lineage school dirs are adopted only if their latest checkpoint is this role and seed."""
+    try:
+        m = load_checkpoint(out / "latest.pt").meta
+    except Exception:
+        return False
+    return m.role == role and m.seed == seed
 
 
 def run_school(role: str, config: str, steps: int, seed: int, out: Path, eval_every: int = 4096,
                n_val: int = 20, n_envs: int = 8, rollout_len: int = 64, ppo: dict | None = None, log=print) -> dict:
     cfg = load_config(config)
     assert cfg["role"] == role, f"config role {cfg['role']} != --role {role}"
-    out.mkdir(parents=True, exist_ok=True)
+    claim_run(out, {"kind": "school", "role": role, "config": Path(config).read_text(), "seed": seed,
+                    "n_envs": n_envs, "rollout_len": rollout_len}, adopt=lambda: _legacy_ok(out, role, seed))
     adv = cfg.get("advance_on", {})
     cur = Curriculum([str(i) for i in range(len(cfg["levels"]))], threshold=adv.get("threshold", 0.8), window=2)
     state_f, best_f = out / "school_state.json", out / "best_score.json"
@@ -94,7 +111,10 @@ def run_school(role: str, config: str, steps: int, seed: int, out: Path, eval_ev
 
 
 def main(argv=None) -> int:
-    p = argparse.ArgumentParser(prog="hospital-rl train")
+    p = argparse.ArgumentParser(prog="hospital-rl train", description=(
+        "Stage A-C school training for one role with validation-gated curriculum and best.pt selection. Re-running "
+        "with the same --out resumes; a different role/config/seed on an existing --out is refused. "
+        "Exit 0: finished; exit 2: --out belongs to a different run."))
     p.add_argument("--role", required=True, choices=["attacker", "defender"])
     p.add_argument("--config", required=True)
     p.add_argument("--steps", type=int, default=100_000)
@@ -106,8 +126,12 @@ def main(argv=None) -> int:
     p.add_argument("--lr", type=float, default=1e-3, help="PPO lr; 3e-4 collapsed the attacker on seed 7 (see docs)")
     p.add_argument("--ent-coef", type=float, default=0.01)
     a = p.parse_args(argv)
-    r = run_school(a.role, a.config, a.steps, a.seed, Path(a.out or f"runs/{a.role}"), a.eval_every,
-                   a.val_episodes, a.n_envs, ppo={"lr": a.lr, "ent_coef": a.ent_coef})
+    try:
+        r = run_school(a.role, a.config, a.steps, a.seed, Path(a.out or f"runs/{a.role}"), a.eval_every,
+                       a.val_episodes, a.n_envs, ppo={"lr": a.lr, "ent_coef": a.ent_coef})
+    except LineageError as e:
+        print(f"error: {e}", file=sys.stderr)
+        return 2
     print(json.dumps(r))
     return 0
 

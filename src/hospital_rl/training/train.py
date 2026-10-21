@@ -19,8 +19,8 @@ import numpy as np
 import torch
 from pydantic import BaseModel
 
-from hospital_rl.policies.checkpoint import (atomic_write, build_ppo, clean_stale_tmp, interrupt_flag, load_for_role,
-                                             save_checkpoint)
+from hospital_rl.policies.checkpoint import (IncompatibleCheckpointError, atomic_write, build_ppo, clean_stale_tmp,
+                                             interrupt_flag, load_for_role, save_checkpoint)
 from hospital_rl.policies.ppo import (PPO, Agent, GraphPolicy, Normalizer, PPOConfig, SyncVecEnv,
                                       collect_rollout)
 
@@ -35,6 +35,7 @@ class TrainConfig(BaseModel):
     checkpoint_every: int = 10  # rounds
     env_factory: str  # "package.module:callable"
     env_kwargs: dict = {}
+    init_checkpoint: str | None = None  # warm start (weights + normalizer; fresh optimizer/counters); lineage parent
     ppo: PPOConfig = PPOConfig()
 
     def hash(self) -> str:
@@ -87,6 +88,16 @@ def train(cfg: TrainConfig, out_dir: str | Path, *, resume: bool = False,
                              int(space["globals"].shape[0]), n_types, cfg.hidden)
         ppo = PPO(policy, Normalizer(policy.config["node_dim"], policy.config["hist_dim"],
                                      policy.config["glob_dim"]), cfg.ppo)
+        if cfg.init_checkpoint:
+            src = load_for_role(cfg.init_checkpoint, cfg.role, ids["catalog_hash"], ids["observation_schema_hash"])
+            if src.meta.policy_config != policy.config:
+                raise IncompatibleCheckpointError(
+                    f"checkpoint {cfg.init_checkpoint} incompatible - policy_config: checkpoint has "
+                    f"{src.meta.policy_config!r}, expected {policy.config!r}")
+            policy.load_state_dict(src.state["model"])
+            ppo.normalizer.load_state_dict(src.state["normalizer"])
+            ppo.normalizer.frozen = False  # the adapting role keeps fitting its own normalizer
+            parent_id = src.meta.checkpoint_id
 
     def save() -> Path:
         """Publish ckpt_<version>.pt and refresh latest.pt. If this version was already published

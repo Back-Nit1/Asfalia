@@ -1,0 +1,11 @@
+# Stage D only: frozen transfer of explicit, already-trained checkpoints. No training, no adaptation arms.
+name: frozen_transfer
+world_config: configs/hospital40.yaml
+seed: 7
+trainable_role: defender
+league: "off"
+checkpoints:
+  attacker: CHANGE_ME/attacker/best.pt
+  defender: CHANGE_ME/defender/best.pt
+transfer: {split: validation, episodes: 20}
+arms: []
