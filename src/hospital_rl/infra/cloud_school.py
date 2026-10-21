@@ -1,11 +1,14 @@
 """Run school training (role x seed grid) off-device, one container/sandbox per run, all in parallel.
 
-Modal (primary; results land on Volume ``hospital-rl-school`` and survive the client):
-    modal run -d src/hospital_rl/infra/cloud_school.py --steps 200000 --seeds 7,8,9
-    modal volume get hospital-rl-school /<tag> runs/cloud-<tag>        # tag printed at launch
+Modal runs through the common job lifecycle (``lifecycle.GatewayBackend`` + ``modal_app``): every role x seed is one
+``kind="school"`` job with caps, attempt ids, a manifest and drain / stop / cancel / resume like any other job.
+    python -m hospital_rl.infra.cloud_school modal --steps 200000 --seeds 7,8,9        # ephemeral: keep this process up
+    python -m hospital_rl.infra.cloud_school modal --detach ...                         # deployed app; submit and exit
+    python -m hospital_rl.infra.cloud_school status --tag <tag>                         # re-attach from the registry
+    modal volume get hospital-rl-school /<tag>-<role>-s<seed> runs/cloud-<tag>-<role>-s<seed>
+Re-running a tag starts a new attempt that resumes from the previous attempt (checkpoint + school_state.json).
 Daytona (sandboxes; client must stay up, results are downloaded into runs/daytona/<tag>):
     python -m hospital_rl.infra.cloud_school daytona --steps 50000 --seeds 7,8
-Re-running with the same tag resumes from the Volume (run_school resumes from school_state.json).
 Secrets: Modal auth via ~/.modal.toml; DAYTONA_API_KEY/DAYTONA_API_URL read from env or .env (never printed).
 """
 from __future__ import annotations
@@ -18,44 +21,66 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
+from hospital_rl.infra.backend import JobSpec
+from hospital_rl.infra.bundle import DEPS, TORCH_CPU  # light imports only: Daytona-only installs have no torch
+
 ROOT = Path(__file__).resolve().parents[min(3, len(Path(__file__).resolve().parents) - 1)]  # container: /root/x.py
 CONFIG = {"attacker": "configs/attacker_school.yaml", "defender": "configs/defender_school.yaml"}
-DEPS = ["numpy", "networkx", "gymnasium", "pettingzoo", "pydantic>=2", "pyyaml"]
-TORCH_CPU = "https://download.pytorch.org/whl/cpu"  # default linux torch wheel drags in ~3GB of CUDA
+APP = "hospital-rl-school"
 
-try:
-    import modal
-except ImportError:  # daytona-only installs
-    modal = None
 
-if modal:
-    app = modal.App("hospital-rl-school")
-    vol = modal.Volume.from_name("hospital-rl-school", create_if_missing=True)
-    image = (modal.Image.debian_slim(python_version="3.13").pip_install("torch", index_url=TORCH_CPU)
-             .pip_install(*DEPS).add_local_dir(ROOT / "configs", "/root/configs")
-             .add_local_python_source("hospital_rl"))
+def school_specs(a, backend) -> list[JobSpec]:
+    """One spec per role x seed. A re-used tag gets the next attempt id, resuming from the previous terminal attempt."""
+    tag, specs = a.tag or time.strftime("%Y%m%d-%H%M%S"), []
+    for role in a.roles.split(","):
+        for seed in map(int, a.seeds.split(",")):
+            run = f"{tag}-{role}-s{seed}"
+            prev = sorted((r for r in backend.reg.all() if r["run_id"] == run), key=lambda r: r["submitted_at"])
+            specs.append(JobSpec(
+                run_id=run, attempt_id=f"a{len(prev) + 1}", kind="school", resume_from_attempt=prev[-1]["attempt_id"] if prev else None,
+                train_config=dict(role=role, config=CONFIG[role], steps=a.steps, seed=seed, eval_every=a.eval_every,
+                                  ppo={"lr": a.lr, "ent_coef": a.ent_coef}),
+                timeout_s=a.timeout, grace_s=120, cpu=2, memory_mb=4096))
+    return specs
 
+
+def modal_main(a) -> None:
+    from hospital_rl.infra.lifecycle import ResourceCaps
+    from hospital_rl.infra.modal_app import ModalBackend, ModalConfig, RealModalGateway
+
+    n = len(a.roles.split(",")) * len(a.seeds.split(","))
     # ponytail: 2 cpu, SyncVecEnv is single-process; scale by more seeds, not bigger boxes.
-    @app.function(image=image, volumes={"/runs": vol}, cpu=2, memory=4096, timeout=24 * 3600)
-    def school(job: dict) -> dict:
-        from hospital_rl.training.schools import run_school
+    cfg = ModalConfig(app_name=APP, volume_name=APP, mode="deployed" if a.detach else "ephemeral", registry_dir="runs/.registry/school",
+                      caps=ResourceCaps(cpu=2, memory_mb=4096, timeout_s=a.timeout, grace_s=120, max_containers=n, max_steps=a.steps))
+    gw = RealModalGateway(cfg)
+    if a.detach and not a.no_deploy:
+        gw.deploy()
+    be = ModalBackend(cfg, gw)
+    ids = [be.submit(sp) for sp in school_specs(a, be)]
+    for j in ids:
+        print(f"submitted {j} call={be._rec(j)['remote_id']}")
+    if a.detach:
+        print("detached: poll with `cloud_school status --tag <tag>`")
+        return
+    try:
+        while not all((st := be.status(j)).state.terminal for j in ids):
+            time.sleep(10)
+        for j in ids:
+            st = be.status(j)
+            print(f"{j} {st.state.value} {st.result.get('env_steps')} steps {st.detail}")
+    finally:
+        gw.close()  # stop the ephemeral app (and its containers) when this controller leaves
 
-        out = Path("/runs") / job["tag"] / f"{job['role']}-s{job['seed']}"
-        try:
-            return run_school(job["role"], CONFIG[job["role"]], job["steps"], job["seed"], out, job["eval_every"],
-                              ppo={"lr": job["lr"], "ent_coef": job["ent_coef"]}, log=lambda s: print(s, flush=True))
-        finally:
-            vol.commit()  # keep partial progress so a rerun resumes
 
-    @app.local_entrypoint()
-    def main(steps: int = 200_000, seeds: str = "7", roles: str = "attacker,defender", tag: str = "",
-             lr: float = 1e-3, ent_coef: float = 0.01, eval_every: int = 8192):
-        tag = tag or time.strftime("%Y%m%d-%H%M%S")
-        jobs = [dict(role=r, seed=int(s), steps=steps, tag=tag, lr=lr, ent_coef=ent_coef, eval_every=eval_every)
-                for r in roles.split(",") for s in seeds.split(",")]
-        for j in jobs:
-            print(f"spawned {j['role']} seed={j['seed']} call={school.spawn(j).object_id}")
-        print(f"tag={tag}  fetch: modal volume get hospital-rl-school /{tag} runs/cloud-{tag}")
+def status_main(a) -> None:
+    from hospital_rl.infra.modal_app import ModalBackend, ModalConfig, RealModalGateway
+
+    cfg = ModalConfig(app_name=APP, volume_name=APP, mode="deployed" if a.detach else "ephemeral", registry_dir="runs/.registry/school")
+    be = ModalBackend(cfg, RealModalGateway(cfg))
+    for r in be.reg.all():
+        if r["run_id"].startswith(a.tag):
+            st = be.status(r["job_id"])
+            print(f"{r['job_id']} {st.state.value} ckpt={st.checkpoint} {st.detail}")
 
 
 def _bundle() -> bytes:
@@ -108,7 +133,10 @@ def daytona_main(a) -> None:
 
 if __name__ == "__main__":
     p = argparse.ArgumentParser()
-    p.add_argument("backend", choices=["daytona"])
+    p.add_argument("backend", choices=["daytona", "modal", "status"])
+    p.add_argument("--detach", action="store_true", help="modal: use a deployed app so jobs outlive this process (NOT live-verified)")
+    p.add_argument("--no-deploy", action="store_true", help="modal --detach: attach to the already deployed app")
+    p.add_argument("--eval-every", type=int, default=8192)
     p.add_argument("--steps", type=int, default=50_000)
     p.add_argument("--seeds", default="7")
     p.add_argument("--roles", default="attacker,defender")
@@ -116,4 +144,5 @@ if __name__ == "__main__":
     p.add_argument("--lr", type=float, default=1e-3)
     p.add_argument("--ent-coef", type=float, default=0.01)
     p.add_argument("--timeout", type=int, default=6 * 3600)
-    daytona_main(p.parse_args())
+    args = p.parse_args()
+    {"daytona": daytona_main, "modal": modal_main, "status": status_main}[args.backend](args)

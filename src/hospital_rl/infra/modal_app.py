@@ -29,15 +29,13 @@ from pathlib import Path
 from pydantic import BaseModel
 
 from hospital_rl.infra.backend import JobSpec
-from hospital_rl.infra.bundle import repo_root
+from hospital_rl.infra.bundle import DEPS, TORCH_CPU, repo_root
 from hospital_rl.infra.job import control_path
 from hospital_rl.infra.lifecycle import GatewayBackend, Registry, ResourceCaps
 
 VOLUME_MOUNT = "/runs"
 REMOTE_ROOT = "/root"  # add_local_python_source puts hospital_rl here; configs/ is copied next to it
 CFG_ENV = "HOSPITAL_RL_MODAL_CFG"
-DEPS = ["numpy", "networkx", "gymnasium", "pettingzoo", "pydantic>=2", "pyyaml"]
-TORCH_CPU = "https://download.pytorch.org/whl/cpu"  # default linux torch wheel drags in ~3GB of CUDA
 FUNCTION = "train_job"
 
 

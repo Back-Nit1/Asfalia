@@ -17,6 +17,8 @@ from hospital_rl.infra.backend import BUNDLE_VERSION, JobSpec
 OWNER_LABEL = {"owner": "asfalia"}
 SAFE_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$")  # ids become path components: no separators, no '..'
 PACKAGE = "hospital_rl"
+DEPS = ["numpy", "networkx", "gymnasium", "pettingzoo", "pydantic>=2", "pyyaml"]  # runtime deps of a clean container
+TORCH_CPU = "https://download.pytorch.org/whl/cpu"  # default linux torch wheel drags in ~3GB of CUDA
 
 
 def package_root() -> Path:
