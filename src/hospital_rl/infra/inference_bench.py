@@ -30,6 +30,13 @@ REPORT_KEYS = {"schema_version", "model", "provenance", "corpus", "env", "backen
 ROW_KEYS = {"backend", "batch", "p50_us", "p95_us", "throughput_samples_per_s"}
 
 
+def to_batch(rows: list[dict]) -> dict[str, np.ndarray]:
+    """Stack env observations into the backend contract (env masks are int8; the contract is bool)."""
+    from .inference import DTYPES
+
+    return {k: np.ascontiguousarray(np.stack([r[k] for r in rows]), dtype=DTYPES[k]) for k in DTYPES}
+
+
 def golden_corpus(role: str, n: int, seed: int = 0, extreme: bool = False) -> dict[str, np.ndarray]:
     """n real observations for ``role``, round-robin over (family, size) cells, random legal play for both roles."""
     from ..envs.parallel_env import HospitalParallelEnv
@@ -46,7 +53,7 @@ def golden_corpus(role: str, n: int, seed: int = 0, extreme: bool = False) -> di
         obs[c], _, _, _, _ = envs[c].step(pick)
         if not envs[c].agents:
             obs[c] = envs[c].reset(seed=seed + n + i)[0]
-    batch = {k: np.ascontiguousarray(np.stack([r[k] for r in rows])) for k in rows[0]}
+    batch = to_batch(rows)
     if extreme:
         batch["node_features"] = np.ascontiguousarray(batch["node_features"] * np.float32(1e6))
         batch["globals"] = np.ascontiguousarray(batch["globals"] - np.float32(5e5))
@@ -97,7 +104,7 @@ def env_steps_per_s(be, role: str, steps: int, seed: int = 0) -> float:
     obs, _ = env.reset(seed=seed)
     s, n = time.perf_counter(), 0
     while n < steps:
-        a = int(be.run({k: np.ascontiguousarray(v[None]) for k, v in obs.items()}).logits.argmax(-1)[0])
+        a = int(be.run(to_batch([obs])).logits.argmax(-1)[0])
         obs, _, te, tr, _ = env.step(a)
         n += 1
         if te or tr:
@@ -189,7 +196,7 @@ def main(argv: list[str] | None = None) -> int:
             s = time.perf_counter()
             be.run(parity_in["typical"])
             first_ms = round((time.perf_counter() - s) * 1e3, 1)
-        except Exception as e:  # missing optional dependency / toolchain / unsupported platform
+        except (ImportError, OSError, RuntimeError) as e:  # missing optional dependency / toolchain / unsupported platform
             report["backends"][name] = {"unavailable": f"{type(e).__name__}: {str(e).splitlines()[0] if str(e) else ''}"}
             continue
         if be.meta["checkpoint_id"] != meta["checkpoint_id"] or be.meta["role"] != role:
