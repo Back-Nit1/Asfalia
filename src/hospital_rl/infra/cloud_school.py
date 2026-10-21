@@ -2,7 +2,7 @@
 
 Modal (primary; results land on Volume ``hospital-rl-school`` and survive the client):
     modal run -d src/hospital_rl/infra/cloud_school.py --steps 200000 --seeds 7,8,9
-    modal volume get hospital-rl-school /<tag> runs/cloud/        # tag printed at launch
+    modal volume get hospital-rl-school /<tag> runs/cloud-<tag>        # tag printed at launch
 Daytona (sandboxes; client must stay up, results are downloaded into runs/daytona/<tag>):
     python -m hospital_rl.infra.cloud_school daytona --steps 50000 --seeds 7,8
 Re-running with the same tag resumes from the Volume (run_school resumes from school_state.json).
@@ -18,7 +18,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[3]
+ROOT = Path(__file__).resolve().parents[min(3, len(Path(__file__).resolve().parents) - 1)]  # container: /root/x.py
 CONFIG = {"attacker": "configs/attacker_school.yaml", "defender": "configs/defender_school.yaml"}
 DEPS = ["numpy", "networkx", "gymnasium", "pettingzoo", "pydantic>=2", "pyyaml"]
 TORCH_CPU = "https://download.pytorch.org/whl/cpu"  # default linux torch wheel drags in ~3GB of CUDA
@@ -55,7 +55,7 @@ if modal:
                 for r in roles.split(",") for s in seeds.split(",")]
         for j in jobs:
             print(f"spawned {j['role']} seed={j['seed']} call={school.spawn(j).object_id}")
-        print(f"tag={tag}  fetch: modal volume get hospital-rl-school /{tag} runs/cloud/")
+        print(f"tag={tag}  fetch: modal volume get hospital-rl-school /{tag} runs/cloud-<tag>
 
 
 def _bundle() -> bytes:
