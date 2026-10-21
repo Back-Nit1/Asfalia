@@ -1,15 +1,19 @@
+# Local job: same bundle and lifecycle as Modal.
+# Real package environment: the shared hospital world (two-role world, scripted attacker opponent), explicit parameters.
 backend: local
 train:
   role: defender
   total_steps: 20000
   n_envs: 8
   rollout_len: 64
-  env_factory: "toy_env:make_env"
+  env_factory: "hospital_rl.envs.factories:hospital_single"
+  env_kwargs: {role: defender, size: 12, split: train, difficulty: 0.5, horizon: 40, opponent: scripted}
 caps:
   cpu: 2
   memory_mb: 2048
   timeout_s: 300
+  grace_s: 30
   max_containers: 1
   max_retries: 0
 estimate:
-  steps_per_sec: 5000   # assumption; replace with a measured local number
+  steps_per_sec: 5000   # assumption; replace with a measured number
