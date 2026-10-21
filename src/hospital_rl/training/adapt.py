@@ -146,32 +146,27 @@ def _train_to(role: str, target: int, out: Path, *, init: str | None, league: Pa
               log) -> dict:
     """Chunked PPO of `role` in `out` until its own step counter reaches `target`; validation-only best.pt."""
     out.mkdir(parents=True, exist_ok=True)
-    best_f = out / "best_score.json"
+    best_f, metrics_f = out / "best_score.json", out / "metrics.jsonl"
     best = json.loads(best_f.read_text())["score"] if best_f.exists() else -1e9
-    steps, last_val = 0, None
-    while True:
-        cfg = TrainConfig(role=role, seed=seed, total_steps=target, n_envs=n_envs, rollout_len=rollout_len,
-                          checkpoint_every=10 ** 6, env_factory=FACTORY, ppo=ppo, init_checkpoint=init,
-                          env_kwargs={"role": role, "world": world.model_dump(), "league": str(league),
-                                      "split": "train", "seed": seed})
-        done = steps
-        steps = min(done + eval_every, target) if done else min(_steps(out) + eval_every, target)
-        cfg.total_steps = steps
+    while (cur := _steps(out)) < target or not (out / "best.pt").exists():
+        cfg = TrainConfig(role=role, seed=seed, total_steps=min(cur + eval_every, target), n_envs=n_envs,
+                          rollout_len=rollout_len, checkpoint_every=10 ** 6, env_factory=FACTORY, ppo=ppo,
+                          init_checkpoint=init, env_kwargs={"role": role, "world": world.model_dump(),
+                                                            "league": str(league), "split": "train", "seed": seed})
         res = train(cfg, out, resume=(out / "latest.pt").exists(), log=lambda s: None)
-        steps = res.env_steps
-        last_val = validate_shared(out / "latest.pt", role, opponent, world, n_val)
-        if last_val["score"] > best:
-            best = last_val["score"]
+        val = validate_shared(out / "latest.pt", role, opponent, world, n_val)
+        if val["score"] > best:
+            best = val["score"]
             shutil.copy(out / "latest.pt", out / "best.pt")
             shutil.copy(out / "latest.pt.meta.json", out / "best.pt.meta.json")
-            best_f.write_text(json.dumps({"score": best, "steps": steps}))
-        with open(out / "metrics.jsonl", "a") as f:
-            f.write(json.dumps({"env_steps": steps, "validation": last_val,
+            best_f.write_text(json.dumps({"score": best, "steps": res.env_steps}))
+        with open(metrics_f, "a") as f:
+            f.write(json.dumps({"env_steps": res.env_steps, "validation": val,
                                 "train_mean_return": res.history[-1]["mean_return"] if res.history else None}) + "\n")
-        log(f"{role} steps={steps} val_score={last_val['score']:.3f} exposure={last_val['exposure']:.3f} "
-            f"feasible={last_val['feasible_rate']:.2f}")
-        if steps >= target:
-            return {"steps": steps, "best_score": best, "last_validation": last_val}
+        log(f"{role} steps={res.env_steps} val_score={val['score']:.3f} exposure={val['exposure']:.3f} "
+            f"feasible={val['feasible_rate']:.2f}")
+    last = json.loads(metrics_f.read_text().splitlines()[-1])
+    return {"steps": _steps(out), "best_score": best, "last_validation": last["validation"]}
 
 
 def _steps(out: Path) -> int:
