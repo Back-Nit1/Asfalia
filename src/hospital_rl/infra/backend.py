@@ -29,10 +29,28 @@ class JobState(str, Enum):
         return self not in (JobState.PENDING, JobState.RUNNING)
 
 
+BUNDLE_VERSION = 1
+
+
 class JobSpec(BaseModel):
+    """The versioned, resolved job bundle. ``infra.bundle.resolve``/``validate`` fill and check the pins
+    below before any backend launches anything; unpinned fields mean "not applicable", never "default"."""
+    bundle_version: int = BUNDLE_VERSION
+    kind: str = "train"  # "train": one PPO job | "school": chunked PPO + validation + curriculum (role x seed unit)
     run_id: str
     attempt_id: str  # new id per (re)start; run lineage lives in checkpoint metadata
-    train_config: dict  # TrainConfig fields; total_steps is the enforced step cap
+    train_config: dict  # kind=train: TrainConfig fields (total_steps is the step cap). kind=school: see infra.bundle
+    scenario: dict = Field(default_factory=dict)  # {"config": ..., "level": ..., "split": ...} or shared-world params
+    split: str | None = None
+    seed_range: tuple[int, int] | None = None  # [start, stop) of the pinned split seeds
+    opponent_checkpoint_ids: list[str] = Field(default_factory=list)
+    policy_version: int | None = None  # version the job must start from (None = fresh)
+    normalizer_version: int | None = None
+    horizon: int | None = None
+    output_path: str = ""  # <run>/<attempt>, relative to the store root
+    code_hash: str = ""  # sha256 over the hospital_rl source tree the job was resolved against
+    config_hash: str = ""  # sha256 over train_config + scenario
+    labels: dict[str, str] = Field(default_factory=dict)  # ownership labels; cleanup only touches labelled attempts
     resume_from_attempt: str | None = None  # copy that attempt's latest.pt into this attempt, then resume
     timeout_s: int = 600
     grace_s: int = 30  # time allowed to checkpoint after a timeout/stop before a hard kill
@@ -47,6 +65,7 @@ class JobStatus(BaseModel):
     state: JobState
     detail: str = ""
     result: dict = Field(default_factory=dict)
+    checkpoint: dict = Field(default_factory=dict)  # {name, env_steps, written_at, age_s}: last durable checkpoint
 
 
 class JobBackend(ABC):
