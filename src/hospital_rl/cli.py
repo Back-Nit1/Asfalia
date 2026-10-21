@@ -22,9 +22,10 @@ def main(argv: list[str] | None = None) -> int:
     bm.add_argument("--size", type=int, default=8)
     bm.add_argument("--out")
     bm.add_argument("--tie-sensitivity", action="store_true")
-    for name in ("train", "evaluate", "adapt", "orchestrate", "dashboard", "cloud-plan", "cleanup",
-                 "export-policy", "benchmark-inference"):
-        sub.add_parser(name)
+    for name in ("train", "evaluate", "adapt", "experiment", "orchestrate", "dashboard", "cloud-plan",
+                 "cloud-reconcile", "cleanup", "export-policy", "benchmark-inference", "export-trajectories",
+                 "validate-trajectories", "report", "ablations"):
+        sub.add_parser(name, add_help=False)
     args, rest = p.parse_known_args(argv)
     if args.cmd in _DELEGATE:
         return _delegate(args.cmd, rest)
@@ -41,15 +42,21 @@ def main(argv: list[str] | None = None) -> int:
 
 
 _DELEGATE = {"train": "hospital_rl.training.schools", "dashboard": "hospital_rl.api.__main__",
-             "orchestrate": "hospital_rl.orchestration.__main__", "cloud-plan": "hospital_rl.infra.plan",
-             "evaluate": "hospital_rl.evaluation.transfer", "adapt": "hospital_rl.training.adapt",
-             "export-policy": "hospital_rl.infra.inference_cli"}
+             "experiment": "hospital_rl.training.experiments", "orchestrate": "hospital_rl.orchestration.__main__",
+             "cloud-plan": "hospital_rl.infra.plan", "cloud-reconcile": "hospital_rl.infra.reconcile",
+             "cleanup": "hospital_rl.infra.reconcile", "evaluate": "hospital_rl.evaluation.transfer",
+             "adapt": "hospital_rl.training.adapt", "export-policy": "hospital_rl.infra.inference_cli",
+             "benchmark-inference": "hospital_rl.infra.inference_bench", "report": "hospital_rl.reporting.report",
+             "ablations": "hospital_rl.evaluation.ablations", "export-trajectories": "hospital_rl.data.trajectory",
+             "validate-trajectories": "hospital_rl.data.trajectory"}
+
+_DELEGATE_PREFIX = {"export-trajectories": ["export"], "validate-trajectories": ["validate"]}
 
 
 def _delegate(cmd: str, rest: list[str]) -> int:
     import importlib
 
-    return importlib.import_module(_DELEGATE[cmd]).main(rest) or 0
+    return importlib.import_module(_DELEGATE[cmd]).main([*_DELEGATE_PREFIX.get(cmd, []), *rest]) or 0
 
 
 def _demo(args) -> int:
@@ -104,10 +111,17 @@ def _bench(args) -> int:
 
     from .evaluation import benchmark
 
+    settings = {"size": args.size}
+    if args.config:
+        from .training.world import load_world
+
+        world = load_world(args.config)
+        settings = {"size": world.size, "difficulty": world.difficulty, "horizon": world.horizon,
+                    "base_logging": world.base_logging}
     if args.tie_sensitivity:
-        print(json.dumps(benchmark.tie_sensitivity(args.split, args.episodes, args.size), indent=1))
+        print(json.dumps(benchmark.tie_sensitivity(args.split, args.episodes, **settings), indent=1))
         return 0
-    r = benchmark.run(args.split, args.episodes, args.size)
+    r = benchmark.run(args.split, args.episodes, **settings)
     print(f"split={r['split']} hash={r['split_hash']} n={r['n_scenarios']}  (scripted attacker; uncalibrated)")
     print(f"{'defender':20}{'exposure':>10}{'crit_ok':>9}{'spend':>8}  feasible")
     for n, d in r["defenders"].items():

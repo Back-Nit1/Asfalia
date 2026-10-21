@@ -9,9 +9,8 @@ from typing import Literal
 import yaml
 from pydantic import BaseModel, ValidationError
 
+from ..envs.factories import hospital_penv
 from ..envs.parallel_env import HospitalParallelEnv
-from ..evaluation.splits import SPLITS
-from ..scenarios import generate
 
 
 class WorldConfigError(ValueError):
@@ -41,11 +40,4 @@ def load_world(path: str | Path) -> WorldConfig:
 
 def world_penv(world: WorldConfig, split: str) -> HospitalParallelEnv:
     """Two-role env; reset(seed) maps the seed into the split's range and draws family/workload from the split."""
-    cfg = SPLITS[split]
-
-    def make(seed: int):
-        s = cfg["seeds"].start + seed % len(cfg["seeds"])
-        fam = cfg["families"][s % len(cfg["families"])]
-        wl = cfg["workloads"][(s // len(cfg["families"])) % len(cfg["workloads"])]
-        return generate(fam, world.size, s, world.difficulty, wl, world.horizon, world.base_logging)
-    return HospitalParallelEnv(make)
+    return hospital_penv(world.size, split, world.difficulty, world.horizon, world.base_logging)

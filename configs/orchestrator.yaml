@@ -9,6 +9,7 @@ config:
   repo: .
   worktree_root: ../hospital-rl-worktrees
   base_commit: main
+  validate_paths: true
   integration_branch: integration
   integration_repo: ../hospital-rl-integration   # dedicated checkout of the integration branch
   combined_suite: ["pytest -q"]
@@ -21,37 +22,45 @@ tasks:
     assigned_paths: [src/hospital_rl/engine, src/hospital_rl/schemas.py, src/hospital_rl/events.py, src/hospital_rl/runner.py, configs/tiny.yaml, tests/test_engine.py, tests/test_events.py]
     acceptance_commands: ["pytest -q tests/test_engine.py tests/test_events.py"]
 
-  - id: dashboard-api
-    role: Dashboard/API
+  - id: experiment-pipeline
+    role: Training and experiment pipeline
+    description: Schools, checkpoint lineage, shared-world transfer, Stage E adaptation, and experiment manifests.
+    dependencies: [world-engine]
+    assigned_paths: [src/hospital_rl/training, src/hospital_rl/envs, src/hospital_rl/policies, configs/attacker_school.yaml, configs/defender_school.yaml, configs/experiments, tests/training, tests/experiments]
+    acceptance_commands: ["pytest -q tests/training tests/experiments"]
+
+  - id: dashboard-control-plane
+    role: Experiment control plane and dashboard
     owner: human
-    description: SQLite store, task orchestrator, FastAPI, SSE, React dashboard, episode replay.
-    assigned_paths: [src/hospital_rl/api, src/hospital_rl/orchestration, frontend, configs/orchestrator.yaml, tests/api, tests/orchestration, docs/dashboard.md]
+    description: Durable experiment controller, FastAPI/SSE surface, React dashboard, and episode replay.
+    dependencies: [experiment-pipeline]
+    assigned_paths: [src/hospital_rl/api, src/hospital_rl/experiments, src/hospital_rl/orchestration, frontend, tests/api, tests/orchestration, docs/dashboard.md]
     acceptance_commands: ["pytest -q tests/api tests/orchestration"]
 
-  - id: attacker-curriculum
-    role: Attacker curriculum
-    description: Attacker observations, scripted opponents, attacker tasks and training config.
-    dependencies: [world-engine]
-    assigned_paths: [src/hospital_rl/envs/single_role.py, src/hospital_rl/policies/scripted.py, configs/attacker_school.yaml, tests/attacker]
-    acceptance_commands: ["pytest -q tests/attacker"]
+  - id: cloud-lifecycle
+    role: Local and cloud job lifecycle
+    description: Durable job registry, local/Modal gateways, drain, stop, resume, reconciliation, and artifact verification.
+    dependencies: [experiment-pipeline]
+    assigned_paths: [src/hospital_rl/infra/backend.py, src/hospital_rl/infra/bundle.py, src/hospital_rl/infra/cloud_school.py, src/hospital_rl/infra/job.py, src/hospital_rl/infra/lifecycle.py, src/hospital_rl/infra/local_backend.py, src/hospital_rl/infra/modal_app.py, src/hospital_rl/infra/modal_functions.py, src/hospital_rl/infra/plan.py, src/hospital_rl/infra/reconcile.py, tests/infra/test_cloud_school.py, tests/infra/test_infra.py, tests/infra/test_lifecycle.py, tests/infra/test_packaging.py]
+    acceptance_commands: ["pytest -q tests/infra/test_cloud_school.py tests/infra/test_infra.py tests/infra/test_lifecycle.py tests/infra/test_packaging.py"]
 
-  - id: defender-curriculum
-    role: Defender curriculum
-    description: Defender observations, remediation, cost accounting, defender tasks and config.
-    dependencies: [world-engine]
-    assigned_paths: [src/hospital_rl/envs/curricula.py, src/hospital_rl/policies/heuristic.py, configs/defender_school.yaml, tests/defender]
-    acceptance_commands: ["pytest -q tests/defender"]
+  - id: evaluation-reporting
+    role: Evaluation, trajectories, and reporting
+    description: Frozen cross-play, stratified evaluation, leakage checks, trajectory validation, and deterministic reports.
+    dependencies: [experiment-pipeline]
+    assigned_paths: [src/hospital_rl/evaluation, src/hospital_rl/data, src/hospital_rl/reporting, tests/evaluation, tests/test_data.py, scripts/eval_evidence.py, scripts/make_figures.py]
+    acceptance_commands: ["pytest -q tests/evaluation tests/test_data.py"]
 
-  - id: rl-infra
-    role: RL/experiment infrastructure
-    description: PPO integration, rollout protocol, checkpoint transfer, league, Modal/Daytona adapters.
-    dependencies: [attacker-curriculum, defender-curriculum]
-    assigned_paths: [src/hospital_rl/training, src/hospital_rl/policies/ppo.py, src/hospital_rl/policies/checkpoint.py, src/hospital_rl/infra, tests/training, tests/infra]
-    acceptance_commands: ["pytest -q tests/training tests/infra"]
+  - id: native-inference
+    role: Portable and native inference
+    description: ONNX export, contract validation, latency benchmark, and optional C++ ONNX Runtime adapter.
+    dependencies: [experiment-pipeline]
+    assigned_paths: [src/hospital_rl/infra/inference.py, src/hospital_rl/infra/inference_cli.py, src/hospital_rl/infra/inference_bench.py, native, benchmarks/inference, tests/infra/test_inference.py, tests/infra/test_inference_cli.py]
+    acceptance_commands: ["pytest -q tests/infra/test_inference.py tests/infra/test_inference_cli.py"]
 
-  - id: evaluation-perf
-    role: Evaluation/performance
-    description: Leakage/invariant tests, benchmark splits, cross-play, profiling, C++ inference adapter.
-    dependencies: [rl-infra]
-    assigned_paths: [src/hospital_rl/evaluation, benchmarks, native, tests/evaluation]
-    acceptance_commands: ["pytest -q tests/evaluation"]
+  - id: daytona-testbed
+    role: Daytona workspace and synthetic service testbed
+    description: Daytona lifecycle parity and bounded synthetic hospital-service integration tests.
+    dependencies: [cloud-lifecycle]
+    assigned_paths: [src/hospital_rl/infra/daytona_backend.py, src/hospital_rl/infra/daytona_workspace.py, src/hospital_rl/testbed, tests/testbed, tests/infra/test_daytona.py, tests/infra/test_daytona_safety.py, scripts/daytona_smoke.py, docs/daytona.md]
+    acceptance_commands: ["pytest -q tests/testbed tests/infra/test_daytona.py tests/infra/test_daytona_safety.py"]

@@ -13,9 +13,10 @@ KEYS = ("records_exfiltrated", "weighted_exposure_frac", "critical_success", "no
         "added_latency")
 
 
-def run(split: str, n: int, size: int = 8, difficulty: float = 0.5, horizon: int = 40) -> dict:
+def run(split: str, n: int, size: int = 8, difficulty: float = 0.5, horizon: int = 40,
+        base_logging: int = 0) -> dict:
     seeds = list(SPLITS[split]["seeds"])[:n]
-    specs = {s: scenario_for(split, s, size, difficulty, horizon) for s in seeds}
+    specs = {s: scenario_for(split, s, size, difficulty, horizon, base_logging) for s in seeds}
     out = {"split": split, "split_hash": split_hash(), "n_scenarios": n, "defenders": {}}
     for name, mk in DEFENDERS.items():
         eps = [run_episode(specs[s], s, ScriptedAttacker(), mk()) for s in seeds]
@@ -39,14 +40,16 @@ class _Idle:
         return WAIT
 
 
-def tie_sensitivity(split: str, n: int, size: int = 12) -> dict:
+def tie_sensitivity(split: str, n: int, size: int = 12, difficulty: float = 0.5, horizon: int = 40,
+                    base_logging: int = 0) -> dict:
     """Same scenarios and seeds under each documented tie policy; reports how much outcomes move."""
     seeds = list(SPLITS[split]["seeds"])[:n]
     out = {}
     for tie in ("defender_first", "attacker_first"):
         res = {}
         for name, mk in DEFENDERS.items():
-            runs = [run_episode(scenario_for(split, s, size).model_copy(update={"tie_policy": tie}), s,
+            runs = [run_episode(scenario_for(split, s, size, difficulty, horizon, base_logging)
+                                .model_copy(update={"tie_policy": tie}), s,
                                 ScriptedAttacker(), mk())["metrics"] for s in seeds]
             res[name] = {k: _ci([r[k] for r in runs]) for k in ("weighted_exposure_frac", "critical_success")}
         out[tie] = res

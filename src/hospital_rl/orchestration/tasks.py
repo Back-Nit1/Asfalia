@@ -3,7 +3,7 @@ with failed / blocked / cancelled explicit."""
 from __future__ import annotations
 
 from enum import Enum
-from pathlib import PurePosixPath
+from pathlib import Path, PurePosixPath
 
 import yaml
 from pydantic import BaseModel, Field
@@ -81,6 +81,12 @@ def load_plan(path: str) -> tuple[PlanConfig, list[Task]]:
         if missing := set(t.dependencies) - ids:
             raise ValueError(f"{t.id}: unknown dependencies {sorted(missing)}")
     _assert_acyclic(tasks)
+    if cfg.validate_paths:
+        root = Path(cfg.repo)
+        for task in tasks:
+            missing = [p for p in task.assigned_paths if not (root / _norm(p)).exists()]
+            if missing:
+                raise ValueError(f"{task.id}: assigned paths do not exist: {missing}")
     return cfg, tasks
 
 

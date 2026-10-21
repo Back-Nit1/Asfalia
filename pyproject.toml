@@ -16,7 +16,8 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["pytest", "httpx", "onnx", "onnxruntime"]
-cloud = ["modal", "daytona", "python-dotenv"]
+cloud = ["modal", "daytona==0.225.0"]
+inference = ["onnx", "onnxruntime"]
 native = ["cmake", "pybind11"]
 
 [project.scripts]
@@ -31,3 +32,4 @@ packages = ["src/hospital_rl"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+markers = ["slow: real-environment smoke tests"]

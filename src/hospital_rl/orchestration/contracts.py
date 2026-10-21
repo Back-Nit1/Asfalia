@@ -18,6 +18,7 @@ class PlanConfig(BaseModel):
     repo: str = "."
     worktree_root: str = "../worktrees"
     base_commit: str = "base-v0"
+    validate_paths: bool = False       # opt-in because some plans intentionally assign prospective paths
 
 
 class TaskSpec(BaseModel):

@@ -31,3 +31,11 @@ def test_plan_rejects_cycle(tmp_path):
     p.write_text("tasks:\n - {id: a, role: r, description: d, dependencies: [b]}\n - {id: b, role: r, description: d, dependencies: [a]}\n")
     with pytest.raises(ValueError, match="cycle"):
         load_plan(str(p))
+
+
+def test_plan_can_reject_missing_assigned_paths(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    p = tmp_path / "p.yaml"
+    p.write_text("config: {repo: ., validate_paths: true}\ntasks:\n - {id: a, role: r, description: d, assigned_paths: [missing]}\n")
+    with pytest.raises(ValueError, match="assigned paths do not exist"):
+        load_plan(str(p))

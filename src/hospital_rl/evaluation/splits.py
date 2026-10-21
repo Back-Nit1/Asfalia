@@ -15,13 +15,14 @@ SPLITS = {
 SPLIT_VERSION = 1
 
 
-def scenario_for(split: str, seed: int, size: int = 8, difficulty: float = 0.5, horizon: int = 40) -> ScenarioSpec:
+def scenario_for(split: str, seed: int, size: int = 8, difficulty: float = 0.5, horizon: int = 40,
+                 base_logging: int = 0) -> ScenarioSpec:
     cfg = SPLITS[split]
     if seed not in cfg["seeds"]:
         raise ValueError(f"seed {seed} outside {split} seed range")
     fam = cfg["families"][seed % len(cfg["families"])]
     wl = cfg["workloads"][(seed // len(cfg["families"])) % len(cfg["workloads"])]
-    return generate(fam, size, seed, difficulty, wl, horizon)
+    return generate(fam, size, seed, difficulty, wl, horizon, base_logging)
 
 
 def split_hash() -> str:
