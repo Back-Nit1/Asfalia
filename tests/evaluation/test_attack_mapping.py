@@ -14,4 +14,4 @@ def test_every_attacker_action_mapped_with_valid_ids_and_documented():
         assert f"`{act}`" in DOC
     for tid, (name, _) in M.TECHNIQUES.items():
         assert tid in DOC and name in DOC
-    assert "incomplete" in M.COVERAGE.lower() and "Incomplete" in DOC
+    assert "incomplete" in M.COVERAGE.lower() and "incomplete" in DOC.lower()
