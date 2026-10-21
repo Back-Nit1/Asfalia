@@ -1,14 +1,25 @@
-# DEFERRED: Daytona backend is a stub. Secret name: DAYTONA_API_KEY.
+# Daytona: one sandbox per attempt, same job/bundle contract as Modal. Credential NAME only: DAYTONA_API_KEY
+# (process environment; the backend never reads .env files). Dry run: `hospital-rl cloud-plan --backend daytona`.
 backend: daytona
+snapshot: null            # pinned prebuilt snapshot name (preferred once one exists); null = build the pinned debian-slim image
+python_version: "3.12"
+mirror_dir: runs/daytona/store     # verified local copy of every attempt's artifacts (sandbox deleted only after this verifies)
+registry_dir: runs/.registry/daytona
+auto_stop_min: 15         # idle stop
+ttl_min: 120              # provider-side auto-delete backstop
 train:
   role: defender
-  total_steps: 20000
-  n_envs: 8
-  rollout_len: 64
-  env_factory: "toy_env:make_env"
+  total_steps: 2000
+  n_envs: 4
+  rollout_len: 32
+  env_factory: "hospital_rl.envs.factories:hospital_single"
+  env_kwargs: {role: defender, size: 8, split: train, difficulty: 0.5, horizon: 20, opponent: scripted}
 caps:
   cpu: 2
-  memory_mb: 2048
+  memory_mb: 4096
   timeout_s: 300
+  grace_s: 30
   max_containers: 1
   max_retries: 0
+estimate:
+  steps_per_sec: 2000   # assumption; replace with a measured number

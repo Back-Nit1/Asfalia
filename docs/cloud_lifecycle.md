@@ -84,7 +84,7 @@ class Gateway(Protocol):
 Inside the sandbox run `python -m hospital_rl.infra.job --spec <spec.json> --root <store>` (or call `run_job`); it
 validates the bundle, honors the control file, and writes `result.json`, `progress.json`, `manifest.json`. Register with
 `GatewayBackend("daytona", gateway, Registry(dir), ResourceCaps(...))`.
-The existing `DaytonaBackend` stub and Daytona code in `cloud_school.py` are untouched.
+Implemented by Agent H in `infra/daytona_backend.py` (see [daytona.md](daytona.md)).
 
 ## Live status of this work
 No live cloud call was made by this work (no explicit cloud budget was given). The earlier 2026-10-20/21 live results in

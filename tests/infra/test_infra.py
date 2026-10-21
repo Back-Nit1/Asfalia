@@ -6,7 +6,6 @@ from helpers import FakeGateway, ids, spec, wait_state
 
 from hospital_rl.infra.artifacts import DirArtifactStore
 from hospital_rl.infra.backend import JobState
-from hospital_rl.infra.daytona_backend import DaytonaBackend
 from hospital_rl.infra.local_backend import LocalBackend
 from hospital_rl.infra.modal_app import ModalBackend, ModalConfig, load_modal_config
 from hospital_rl.infra.plan import cloud_plan
@@ -137,12 +136,9 @@ def test_cloud_plan_needs_no_credentials(tmp_path):
     ok = cloud_plan("modal", CONFIGS / "cloud_modal.yaml", env={"MODAL_TOKEN_ID": "SECRETVALUE", "MODAL_TOKEN_SECRET": "x"}, home=tmp_path)
     assert ok.effective_backend == "modal" and "SECRETVALUE" not in ok.model_dump_json()
     assert cloud_plan("local", CONFIGS / "cloud_local.yaml", env={}, home=tmp_path).effective_backend == "local"
-    d = cloud_plan("daytona", CONFIGS / "cloud_daytona.yaml", env={"DAYTONA_API_KEY": "k"}, home=tmp_path)
-    assert d.effective_backend == "local" and any("DEFERRED" in n for n in d.notes)
+    d = cloud_plan("daytona", CONFIGS / "cloud_daytona.yaml", env={"DAYTONA_API_KEY": "SECRETVALUE"}, home=tmp_path)
+    assert d.effective_backend == "daytona" and "SECRETVALUE" not in d.model_dump_json()
+    n = cloud_plan("daytona", CONFIGS / "cloud_daytona.yaml", env={}, home=tmp_path)
+    assert n.effective_backend == "local" and any("DAYTONA_API_KEY" in x for x in n.notes)
     with pytest.raises(ValueError):
         cloud_plan("local", CONFIGS / "cloud_modal.yaml")
-
-
-def test_daytona_is_deferred_stub():
-    with pytest.raises(NotImplementedError, match="DEFERRED"):
-        DaytonaBackend().submit(spec())
