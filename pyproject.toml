@@ -16,7 +16,7 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["pytest", "httpx", "onnx", "onnxruntime"]
-cloud = ["modal"]
+cloud = ["modal", "daytona", "python-dotenv"]
 native = ["cmake", "pybind11"]
 
 [project.scripts]
