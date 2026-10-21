@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS exp_runs (
 CREATE INDEX IF NOT EXISTS exp_runs_state ON exp_runs (state);
 CREATE TABLE IF NOT EXISTS exp_attempts (
   run_id TEXT NOT NULL, attempt_id TEXT NOT NULL, n INTEGER NOT NULL, job_id TEXT, job_state TEXT, resume_from TEXT,
-  resume_checkpoint TEXT, started_at REAL, ended_at REAL, error TEXT, result TEXT, cleaned_at REAL,
+  resume_checkpoint TEXT, started_at REAL, ended_at REAL, error TEXT, result TEXT, cleaned_at REAL, episodes_seen INTEGER NOT NULL DEFAULT 0,
   PRIMARY KEY (run_id, attempt_id));
 CREATE TABLE IF NOT EXISTS exp_metrics (
   run_id TEXT NOT NULL, attempt_id TEXT NOT NULL, seq INTEGER NOT NULL, env_steps INTEGER, data TEXT NOT NULL,

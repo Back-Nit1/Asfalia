@@ -3,6 +3,7 @@ thread, or by tests directly) submits to the injected backend, polls it, and ing
 State is never inferred beyond what the backend or the artifact files report: a lost job becomes `failed`, not `completed`."""
 from __future__ import annotations
 
+import json
 import re
 import time
 from functools import wraps
@@ -141,9 +142,6 @@ class Controller:
             raise ConfigError(str(e).split("; ")) from e
 
     def _measured(self) -> tuple[float, float] | None:
-        r = self.db.one("SELECT run_id, attempt_id, MIN(rowid) a, MAX(rowid) b FROM exp_metrics")
-        if not r or r["a"] is None:
-            return None
         rows = self.db.q("SELECT data FROM exp_metrics ORDER BY rowid DESC LIMIT 2")
         pts = [x["data"] for x in rows if x["data"].get("env_steps") is not None and x["data"].get("t") is not None]
         if len(pts) == 2 and pts[0]["t"] > pts[1]["t"]:
@@ -325,7 +323,7 @@ class Controller:
         have = self.db.one("SELECT COUNT(*) c FROM exp_metrics WHERE run_id=? AND attempt_id=?", (rid, a))["c"]
         rows = self.reader.metrics(rid, a)[have: have + MAX_INGEST]
         for i, row in enumerate(rows):
-            self.db.x("INSERT OR IGNORE INTO exp_metrics VALUES (?,?,?,?,?)", (rid, a, have + i, row.get("env_steps"), __import__("json").dumps(row)))
+            self.db.x("INSERT OR IGNORE INTO exp_metrics VALUES (?,?,?,?,?)", (rid, a, have + i, row.get("env_steps"), json.dumps(row)))
         for row in rows[-MAX_LIVE_EVENTS:]:        # live feed is sampled; the table keeps every row
             self.emit("experiment", f"metrics:{rid}", "training_metric", rid, {"attempt_id": a, **row})
         known = {c["id"] for c in self.checkpoints(rid)}
@@ -335,16 +333,16 @@ class Controller:
                 continue
             self.db.x("INSERT OR IGNORE INTO exp_checkpoints VALUES (?,?,?,?,?,?,?,?,?,?,?,?,1,?)",
                       (m["checkpoint_id"], rid, a, c["name"], c["path"], c["sha256"], c["size"], m.get("training_steps"),
-                       m.get("policy_version"), m.get("parent_checkpoint_id"), m.get("role"), __import__("json").dumps(m), self.clock()))
+                       m.get("policy_version"), m.get("parent_checkpoint_id"), m.get("role"), json.dumps(m), self.clock()))
             self.emit("experiment", "controller", "checkpoint_written", rid, {"checkpoint_id": m["checkpoint_id"], "attempt_id": a,
                                                                              "env_steps": m.get("training_steps"), "sha256": c["sha256"]})
-        seen = self.db.one("SELECT COUNT(*) c FROM exp_audit WHERE action=?", (f"ep:{rid}:{a}",))["c"]
-        for ev in self.reader.episode_events(rid, a)[seen: seen + MAX_EPISODE_EVENTS]:
+        seen = self.db.one("SELECT episodes_seen s FROM exp_attempts WHERE run_id=? AND attempt_id=?", (rid, a))["s"]
+        new = self.reader.episode_events(rid, a)[seen: seen + MAX_EPISODE_EVENTS]
+        self.db.update("exp_attempts", {"run_id": rid, "attempt_id": a}, episodes_seen=seen + len(new))
+        for ev in new:
             # world-stream events from training default to evaluator-only visibility; the producer must opt in to more
             self.emit("world", f"train:{rid}", ev.get("event_type", "episode_event"), rid, ev.get("payload", ev),
                       visibility=ev.get("visibility", "evaluator"), episode_id=ev.get("episode_id"))
-            self.db.x("INSERT INTO exp_audit (ts, actor, action, target, outcome, detail) VALUES (?,?,?,?,?,?)",
-                      (self.clock(), "controller", f"ep:{rid}:{a}", rid, "ingested", ""))
 
     # ---------- evaluation ----------
     def _ckpt(self, cid: str) -> dict:
@@ -391,14 +389,15 @@ class Controller:
         if self.evaluator is None:
             raise ConfigError("no evaluation backend configured")
         spec = {"suite": "debug_fork", "checkpoint_id": checkpoint_id, "sha256": c["sha256"], "tick": tick, "seed": seed, "episodes": 1,
-                "frozen": True, "attacker_checkpoint_id": checkpoint_id, "defender_checkpoint_id": checkpoint_id}
+                "frozen": True, "attacker_checkpoint_id": checkpoint_id, "defender_checkpoint_id": checkpoint_id,
+                "attacker_sha256": c["sha256"], "defender_sha256": c["sha256"]}
         return self._add_eval("debug_fork", True, spec, actor, rid)
 
     def _add_eval(self, suite, debug, spec, actor, run_id) -> dict:
         eid = f"{'dbg' if debug else 'eval'}-{self.db.one('SELECT COUNT(*)+1 c FROM exp_evals')['c']:04d}"
         now = self.clock()
         self.db.x("INSERT INTO exp_evals VALUES (?,?,?,?,?,?,NULL,NULL,?,?,?)",
-                  (eid, run_id, suite, int(debug), "queued", __import__("json").dumps(spec), actor, now, now))
+                  (eid, run_id, suite, int(debug), "queued", json.dumps(spec), actor, now, now))
         return self.get_eval(eid)
 
     def get_eval(self, eid: str) -> dict:
@@ -421,7 +420,7 @@ class Controller:
                 for role in ("attacker", "defender"):
                     c = self._ckpt(spec[f"{role}_checkpoint_id"])
                     p = self.reader.checkpoint_path(c["run_id"], c["attempt_id"], c["name"])
-                    if not p.exists() or c["sha256"] != spec[f"{role}_sha256" if "attacker_sha256" in spec else "sha256"]:
+                    if not p.exists() or c["sha256"] != spec[f"{role}_sha256"]:
                         stale.append(f"{role} checkpoint {c['id']} missing or changed since submission")
                     paths[role] = str(p)
                 if stale:
