@@ -1,0 +1,6 @@
+# Tiny real shared world for CPU smoke runs (not a benchmark world).
+role: shared
+horizon: 20
+size: 12
+difficulty: 0.5
+base_logging: 1

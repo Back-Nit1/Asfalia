@@ -1,0 +1,13 @@
+# Pretrained schools + shared-world adaptation (defender adapts, attacker frozen).
+name: pretrained_adapt
+world_config: configs/hospital40.yaml
+seed: 7
+trainable_role: defender
+league: on
+school:
+  attacker_config: configs/attacker_school.yaml
+  defender_config: configs/defender_school.yaml
+  steps: 100000
+adapt: {steps: 50000}
+transfer: {split: validation, episodes: 20}
+arms: [pretrained]

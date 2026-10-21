@@ -182,7 +182,8 @@ def _ppo(lr: float, ent_coef: float) -> dict:
 def adapt(*, role: str, attacker_checkpoint: str, defender_checkpoint: str, world_config: str, steps: int, seed: int,
           out: str | Path, league: bool, init: str = "pretrained", league_checkpoints: tuple[str, ...] = (),
           eval_checkpoints: tuple[str, ...] = (), eval_every: int = 2048, val_episodes: int = 10, n_envs: int = 4,
-          rollout_len: int = 64, lr: float = 1e-3, ent_coef: float = 0.01, log=print) -> dict:
+          rollout_len: int = 64, lr: float = 1e-3, ent_coef: float = 0.01, pretrain_steps: int | None = None,
+          log=print) -> dict:
     """Adapt `role` for `steps` env steps while the other role is frozen. Weights start from the role's checkpoint
     (init=pretrained) or from scratch (init=scratch, same budget, same frozen opponent)."""
     if role not in OTHER:
@@ -215,7 +216,7 @@ def adapt(*, role: str, attacker_checkpoint: str, defender_checkpoint: str, worl
     lg.save(lg_path)
     pool = eval_pool_report(out / "best.pt", role, lg, world, val_episodes) if league else []
     (out / "eval_pool.json").write_text(json.dumps(pool, indent=1))
-    pre = own.training_steps if init == "pretrained" else 0
+    pre = (own.training_steps if pretrain_steps is None else pretrain_steps) if init == "pretrained" else 0
     manifest = {
         "kind": "adapt", "identity": identity, "resumed": resumed, "code_revision": _code_revision(),
         "world_config": world.model_dump(), "world_config_path": str(world_config),
@@ -312,6 +313,8 @@ def main(argv: list[str] | None = None) -> int:
                    help="scratch: same frozen opponent and budget, trainable role starts from random weights")
     p.add_argument("--league-checkpoint", action="append", default=[], help="historical opponent checkpoint (train pool)")
     p.add_argument("--eval-checkpoint", action="append", default=[], help="held-out opponent checkpoint (eval pool)")
+    p.add_argument("--pretrain-steps", type=int, help="env steps spent producing the trainable role's checkpoint "
+                   "(budget accounting; default: the checkpoint's own training_steps)")
     p.add_argument("--rounds", type=int, help="alternating adaptation: number of rounds (one phase per role per round)")
     p.add_argument("--eval-every", type=int, default=2048)
     p.add_argument("--val-episodes", type=int, default=10)
@@ -327,7 +330,7 @@ def main(argv: list[str] | None = None) -> int:
             m = alternate(first_role=a.trainable_role, rounds=a.rounds, steps_per_phase=a.steps, **common)
         else:
             m = adapt(role=a.trainable_role, steps=a.steps, league_checkpoints=tuple(a.league_checkpoint),
-                      eval_checkpoints=tuple(a.eval_checkpoint), **common)
+                      eval_checkpoints=tuple(a.eval_checkpoint), pretrain_steps=a.pretrain_steps, **common)
     except (IncompatibleCheckpointError, CheckpointError, WorldConfigError, LineageError, ValueError) as e:
         print(f"error: {e}", file=sys.stderr)
         return 2
